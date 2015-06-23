@@ -1,0 +1,24 @@
+{
+  "name": "node-winapi",
+  "version": "0.0.0",
+  "description": "Minimal implementation of winapi to be able to dump feeds for ingest in datahub",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:westtoer/node-winapi.git"
+  },
+  "main": "test.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "async": "^1.2.1",
+    "moment": "^2.10.3",
+    "yargs": "^3.9.1"
+  },
+  "bugs": {
+    "url": "https://github.com/westtoer/node-winapi/issues"
+  },
+  "homepage": "https://github.com/westtoer/node-winapi"
+}
