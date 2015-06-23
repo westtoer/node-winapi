@@ -11,7 +11,10 @@ var wapi = require('./lib/winapi'),
     moment = require('moment'),
     settings,
     PRODUCTS = ['accommodation', 'permanent_offering', 'reca', 'temporary_offering', 'meetingroom'],
-    CHANNELS = ["westtoer*", "brugse_ommeland*", "westhoek*", "de_kust*", "leiestreek*"];
+    CHANNELS = ["westtoer*", "brugse_ommeland*", "westhoek*", "de_kust*", "leiestreek*", "fietsen_en_wandelen*",
+                "kenniscentrum*", "dagtrips_voor_groepen*", "flanders_fields*", "meetingkust*", "autoroutes*",
+                "itrip_coast*", "kustwandelroute*", "west-vlinderen*", "300_jaar_grens*"];
+
 
 settings = argv
     .usage('Test een aantal zaken uit.\nUsage: $0')
@@ -66,14 +69,16 @@ function doTests(e, auth) {
 
     // eerste accomodatie ophalen in xml en json
     (function () {
-        win.fetch(wapi.query('product').size(1), check("XML_1", false));
-        win.fetch(wapi.query('product').asJSON().size(1), check("json_1", true));
-        win.fetch(wapi.query('product').asJSON_HAL().size(1), check("json_hal_1", true));
+        var q = wapi.query('product').size(1);
+        win.fetch(q, check("XML_1", false));
+        win.fetch(q.clone().asJSON(), check("json_1", true));
+        win.fetch(q.clone().asJSON_HAL(), check("json_hal_1", true));
     }());
+
 
     //run many times json fetch to check the presence of pubchannels
     (function () {
-        var seq = [], i, count = 10;
+        var seq = [], i, count = 10, q = wapi.query('product').asJSON().size(1);
         function checkPubChannels(resp) {
             var dist, pcs = resp[0].publishing_channels.tdms__publishing_channel;
             seq.push(pcs ? pcs.length : 0);
@@ -83,20 +88,20 @@ function doTests(e, auth) {
             }
         }
         for (i = 0; i < count; i += 1) {
-            win.fetch(wapi.query('product').asJSON().size(1), check("json_seq_" + i, true, checkPubChannels));
+            win.fetch(q, check("json_seq_" + i, true, checkPubChannels));
         }
     }());
 
     // check the different types we can retrieve
     (function () {
-        var typeHisto = {}, types = PRODUCTS.slice(0);
+        var typeHisto = {}, types = PRODUCTS.slice(0), q = wapi.query('product').asJSON_HAL().size(1);
 
         //make 2 random groupings and add them to the test
         types.reduce(function (g, t) { g[Math.round(Math.random())].push(t); return g; }, [[], []])
             .forEach(function (grp) { if (grp.length > 1) { types.push(grp); } });
 
         types.forEach(function (t) {
-            win.fetch(wapi.query('product').asJSON_HAL().forTypes(t).size(1), check("type_json_" + t, true, function (resp, meta) {
+            win.fetch(q.clone().forTypes(t), check("type_json_" + t, true, function (resp, meta) {
                 typeHisto[t] = meta.pages;
                 if (Object.keys(typeHisto).length === types.length) {
                     console.log('Histogram of available types == %j', typeHisto);
@@ -113,7 +118,8 @@ function doTests(e, auth) {
     //check the lastmodified filtering
     (function () {
         var today = moment(), prev = today.clone().subtract(7, 'days'), curs = today.clone(), cut = today.clone().subtract(6, 'days'),
-            updateHistos = [], i = 0, c = 0, sum = 0, checkSum = 0, allSum = {};
+            updateHistos = [], i = 0, c = 0, sum = 0, checkSum = 0, allSum = {},
+            q = wapi.query('product').asJSON_HAL().size(1);
 
         function histoHandler(j, fr, to) {
             var key = [fr.format('YYYYMMDD'), to.format('YYYYMMDD')].join(' TO ');
@@ -133,11 +139,11 @@ function doTests(e, auth) {
             };
         }
 
-        win.fetch(wapi.query('product').asJSON_HAL().lastmodBetween(prev, curs).size(1), check("lastmod_json_" + i, true, histoHandler(i, prev, curs)));
+        win.fetch(q.clone().lastmodBetween(prev, curs), check("lastmod_json_" + i, true, histoHandler(i, prev, curs)));
         while (prev.isBefore(today)) {
             i += 1;
             curs = prev.clone().add(1, 'days');
-            win.fetch(wapi.query('product').asJSON_HAL().lastmodBetween(prev, curs).size(1), check("lastmod_json_" + i, true, histoHandler(i, prev, curs)));
+            win.fetch(q.clone().lastmodBetween(prev, curs), check("lastmod_json_" + i, true, histoHandler(i, prev, curs)));
             prev = curs;
         }
 
@@ -150,15 +156,15 @@ function doTests(e, auth) {
                 }
             };
         }
-        win.fetch(wapi.query('product').asJSON_HAL().lastmodBetween(null, cut).size(1), check("lastmod_json_before", true, allCheck("before")));
-        win.fetch(wapi.query('product').asJSON_HAL().lastmodBetween(cut, null).size(1), check("lastmod_json_after", true, allCheck("after")));
-        win.fetch(wapi.query('product').asJSON_HAL().size(1), check("lastmod_json_all", true, allCheck("all")));
+        win.fetch(q.clone().lastmodBetween(null, cut), check("lastmod_json_before", true, allCheck("before")));
+        win.fetch(q.clone().lastmodBetween(cut, null), check("lastmod_json_after", true, allCheck("after")));
+        win.fetch(q, check("lastmod_json_all", true, allCheck("all")));
 
     }());
 
     //check the deleted filtering
     (function () {
-        var allSum = {};
+        var allSum = {}, q = wapi.query('product').asJSON_HAL().size(1);
 
         function allCheck(key) {
             return function (resp, meta) {
@@ -169,15 +175,16 @@ function doTests(e, auth) {
                 }
             };
         }
-        win.fetch(wapi.query('product').asJSON_HAL().removed().size(1), check("del_json_del", true, allCheck("del")));
-        win.fetch(wapi.query('product').asJSON_HAL().active().size(1), check("del_json_xst", true, allCheck("xst")));
-        win.fetch(wapi.query('product').asJSON_HAL().ignoreRemoved().size(1), check("del_json_all", true, allCheck("all")));
+        win.fetch(q.clone().removed(), check("del_json_del", true, allCheck("del")));
+        win.fetch(q.clone().active(), check("del_json_xst", true, allCheck("xst")));
+        win.fetch(q.clone().ignoreRemoved(), check("del_json_all", true, allCheck("all")));
 
     }());
 
     //check the combo filtering.
     (function () {
-        var allSum = {}, rmOptions = ['removed', 'active'], cut = moment().subtract(6, 'days');
+        var allSum = {}, rmOptions = ['removed', 'active'], cut = moment().subtract(6, 'days'),
+            q = wapi.query('product').asJSON_HAL().size(1);
 
         function allCheck(key) {
             return function (resp, meta) {
@@ -188,17 +195,17 @@ function doTests(e, auth) {
             };
         }
         rmOptions.forEach(function (del) {
-            win.fetch(wapi.query('product').asJSON_HAL()[del]().lastmodBetween(cut, null).size(1), check(del + "_after", true, allCheck(del + "_after")));
-            win.fetch(wapi.query('product').asJSON_HAL()[del]().lastmodBetween(null, cut).size(1), check(del + "_befor", true, allCheck(del + "_befor")));
+            win.fetch(q.clone()[del]().lastmodBetween(cut, null), check(del + "_after", true, allCheck(del + "_after")));
+            win.fetch(q.clone()[del]().lastmodBetween(null, cut), check(del + "_befor", true, allCheck(del + "_befor")));
         });
     }());
 
     // check the different channels
     (function () {
-        var channelsHisto = {};
+        var channelsHisto = {}, q = wapi.query('product').asJSON_HAL().forTypes(PRODUCTS).size(1);
 
         CHANNELS.forEach(function (c) {
-            win.fetch(wapi.query('product').asJSON_HAL().forTypes(PRODUCTS).forChannels(c).size(1), check("channel_json_" + c, true, function (resp, meta) {
+            win.fetch(q.clone().forChannels(c), check("channel_json_" + c, true, function (resp, meta) {
                 channelsHisto[c] = meta.pages;
                 if (Object.keys(channelsHisto).length === CHANNELS.length) {
                     console.log('Histogram for the known channels == %j', channelsHisto);
@@ -209,7 +216,7 @@ function doTests(e, auth) {
 
     //check the published filtering
     (function () {
-        var allSum = {};
+        var allSum = {}, q = wapi.query('product').asJSON_HAL().forTypes(PRODUCTS).size(1);
 
         function allCheck(key) {
             return function (resp, meta) {
@@ -220,9 +227,9 @@ function doTests(e, auth) {
                 }
             };
         }
-        win.fetch(wapi.query('product').asJSON_HAL().forTypes(PRODUCTS).published().size(1), check("pub_json_pub", true, allCheck("pub")));
-        win.fetch(wapi.query('product').asJSON_HAL().forTypes(PRODUCTS).hidden().size(1), check("pub_json_hid", true, allCheck("hid")));
-        win.fetch(wapi.query('product').asJSON_HAL().forTypes(PRODUCTS).ignorePublished().size(1), check("pub_json_all", true, allCheck("all")));
+        win.fetch(q.clone().published(), check("pub_json_pub", true, allCheck("pub")));
+        win.fetch(q.clone().hidden(), check("pub_json_hid", true, allCheck("hid")));
+        win.fetch(q.clone().ignorePublished(), check("pub_json_all", true, allCheck("all")));
     }());
 }
 
