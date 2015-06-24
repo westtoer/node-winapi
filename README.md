@@ -44,6 +44,7 @@ key             | possibe values     | meaning
     | json               |   JavaScript Object Notation
  ```<<channel>>```      | 'westtoer', 'brugse_ommeland', 'westhoek', 'de_kust', 'leiestreek', 'fietsen_en_wandelen', 'kenniscentrum', 'dagtrips_voor_groepen', 'flanders_fields', 'meetingkust', 'autoroutes', 'itrip_coast', 'kustwandelroute', 'west-vlinderen', '300_jaar_grens', ...| publication-channel on which the contained items in the dump should be published
  
+ 
  ##Known Limitations
  
  The api service does not support resultsets above 6000 items.
