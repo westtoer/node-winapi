@@ -6,6 +6,7 @@
 
 var wapi = require('./lib/winapi'),
     path = require('path'),
+    fs = require('fs'),
     argv = require('yargs'),
     async = require('async'),
     moment = require('moment'),
@@ -230,6 +231,19 @@ function doTests(e, auth) {
         win.fetch(q.clone().published(), check("pub_json_pub", true, allCheck("pub")));
         win.fetch(q.clone().hidden(), check("pub_json_hid", true, allCheck("hid")));
         win.fetch(q.clone().ignorePublished(), check("pub_json_all", true, allCheck("all")));
+    }());
+
+    //check the stream function
+    (function () {
+        var sink = fs.createWriteStream(path.join("tmp", "test.json")), q = wapi.query().size(1).asJSON();
+        win.fetch(q.clone(), function (e, d) {
+            if (e) {
+                console.error(e);
+            } else {
+                console.log(d);
+            }
+        });
+        win.stream(q.clone(), sink);
     }());
 }
 
