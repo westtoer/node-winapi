@@ -37,8 +37,7 @@ settings = argv
 
     .argv;
 
-console.log(settings);
-win = wapi.client({secret: settings.secret, verbose: true});
+win = wapi.client({secret: settings.secret, verbose: false});
 outDir = settings.output;
 
 function addTask(task) {
@@ -147,7 +146,6 @@ function makeDump() {
     makeAll();
 
     win.start(function () {
-        console.log("active token == %s", win.token);
         // process all the work
         work.forEach(perform);
     });
