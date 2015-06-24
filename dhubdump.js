@@ -27,17 +27,24 @@ settings = argv
     .usage('Maakt de win2 dump voor de datahub.\nUsage: $0')
     .example('$0  -o ~/feeds/win/2.0/ -s secret', 'Maakt de dump en plaatst die in de aangegeven output-folder.')
 
+    .describe('clientid', 'id of the client - requires matching secret')
+    .alias('i', 'clientid')
+
     .describe('secret', 'het secret.')
     .alias('s', 'secret')
 
     .describe('output', 'folder waar de dump wordt geplaatst.')
     .alias('o', 'output')
 
+    .describe('verbose', 'should there be a lot of logging output')
+    .alias('v', 'verbose')
+    .default('v', false)
+
     .demand(['secret', 'output'])
 
     .argv;
 
-win = wapi.client({secret: settings.secret, verbose: false});
+win = wapi.client({secret: settings.secret, clientid: settings.clientid, verbose: settings.verbose});
 outDir = settings.output;
 
 function addTask(task) {
@@ -69,12 +76,13 @@ function perform(task) {
             Object.keys(FORMATS).forEach(function (ext) {
                 var fmtMethod = FORMATS[ext],
                     sink = fs.createWriteStream([pathname, ext].join('.'));
-                try {
-                    win.stream(q.clone().size(size)[fmtMethod](), sink);
-                } catch (e) {
+
+                sink.on('error', function (e) {
                     console.error("error saving " + pathname + "." + ext + "-->" + e);
                     remove(ext);
-                }
+                });
+
+                win.stream(q.clone().size(size)[fmtMethod](), sink);
             });
         }
     });
