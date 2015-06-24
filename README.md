@@ -38,3 +38,14 @@ key             | possibe values     | meaning
     | xml                |   eXtensible Markup Language
     | json               |   JavaScript Object Notation
  ```<<channel>>```      | 'westtoer', 'brugse_ommeland', 'westhoek', 'de_kust', 'leiestreek', 'fietsen_en_wandelen', 'kenniscentrum', 'dagtrips_voor_groepen', 'flanders_fields', 'meetingkust', 'autoroutes', 'itrip_coast', 'kustwandelroute', 'west-vlinderen', '300_jaar_grens', ...| publication-channel on which the contained items in the dump should be published
+ 
+ ##Known Limitations
+ 
+ The api service does not support resultsets above 6000 items.
+ In the current state this leads to an error while trying to download all events.
+ 
+```
+error reading uri [http://api.westtoer.tdms.acc.saga.be/api/v1/temporary_offering/?format=xml&access_token=***&size=9750] to stream - response.status == 500
+```
+
+As a result there are no dump files temporary_offering-all.*
