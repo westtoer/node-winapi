@@ -1,5 +1,8 @@
 #Note
-You need to ask win (at) westtoer (dot) be a required api-key (id and secret) to consume this api.
+You need to ask win (at) westtoer.be a required api-key (id and secret) to consume this api yourself.
+
+The data retrieved by this system is made availabe (together with data from other sources) through the Westtoer datahub at http://datahub.westtoer.be
+Contact datahub (at) westtoer.be for more details and access to that.
 
 #Usage
 ```
