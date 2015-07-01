@@ -2,13 +2,13 @@
 You need to ask win (at) westtoer.be a required api-key (id and secret) to consume this api directly (not recommended).
 
 ##Recommended alternative
-The data retrieved by this system is made availabe (together with data from other sources) through the Westtoer datahub at http://datahub.westtoer.be
+The data retrieved by this system is made availabe (together with data from other sources) through the Westtoer datahub at http://datahub.westtoer.be/ext/feeds/WIN/2.0/
 
 Contact datahub (at) westtoer.be for more details and access to that.
 
 #Usage
 ```
-nodejs dhubdump.js -o ~/feeds/win/2.0/ -s <<yoursecret>>
+nodejs dhubdump.js -o ~/feeds/WIN/2.0/ -s <<yoursecret>>
 ```
 This will create the datahub LEVEL0 dump from the WIN 2.0 tdms.
 The created dump files are named and organized as such:
