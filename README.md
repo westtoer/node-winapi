@@ -1,12 +1,26 @@
-#Note
-You need to ask win (at) westtoer.be a required api-key (id and secret) to consume this api directly (not recommended).
+# Note
+## Auth credentials required
+You need to ask win (at) westtoer.be a required api-key (id and secret) to consume this api directly (which is, by the way, not recommended).
 
-##Recommended alternative
+## Recommended alternative
 The data retrieved by this system is made availabe (together with data from other sources) through the Westtoer datahub at http://datahub.westtoer.be/ext/feeds/WIN/2.0/
 
 Contact datahub (at) westtoer.be for more details and access to that.
 
-#Usage
+
+# Install
+
+This requires nodejs and npm to be installed.
+
+Please, be a sport and run the typical 
+```
+npm install
+```
+to avoid unnecessary frustration and disappointment.
+
+
+# Usage
+
 ```
 nodejs dhubdump.js -o ~/feeds/WIN/2.0/ -s <<yoursecret>>
 ```
@@ -45,13 +59,14 @@ key             | possibe values     | meaning
  ```<<channel>>```      | 'westtoer', 'brugse_ommeland', 'westhoek', 'de_kust', 'leiestreek', 'fietsen_en_wandelen', 'kenniscentrum', 'dagtrips_voor_groepen', 'flanders_fields', 'meetingkust', 'autoroutes', 'itrip_coast', 'kustwandelroute', 'west-vlinderen', '300_jaar_grens', ...| publication-channel on which the contained items in the dump should be published
  
  
- ##Known Limitations
+ 
+## Known Limitations
  
  The api service does not support resultsets above 6000 items.
- In the current state this leads to an error while trying to download all events.
+ In the current state this leads to an error while trying to download all events:
  
 ```
 error reading uri [http://api.westtoer.tdms.acc.saga.be/api/v1/temporary_offering/?format=xml&access_token=***&size=9750] to stream - response.status == 500
 ```
 
-As a result there are no dump files temporary_offering-all.*
+As a result there are no dump files (json or XML) for temporary_offering-all.*
