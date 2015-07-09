@@ -1,0 +1,7 @@
+{
+    "verbose" : "false",
+    "clientid": "your id",
+    "secret"  : "your secret",
+    "server"  : "api.westtoer.tdms.acc.saga.be",
+    "version" : "v1"
+}

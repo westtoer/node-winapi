@@ -55,3 +55,22 @@ error reading uri [http://api.westtoer.tdms.acc.saga.be/api/v1/temporary_offerin
 ```
 
 As a result there are no dump files temporary_offering-all.*
+
+
+#Dev
+
+Ready to help out and delve in?
+You might want to install mocha, and make sure all your contributions are accompanied by tests covering the addressed issues or new features.
+
+```
+npm install -g mocha
+npm test
+```
+
+Individual tests are run with
+
+```
+mocha test/test-specific-name.js
+```
+
+Running the tests requires an id/secret pair (see above on how to obtain) - set those in test/client-settings.json (layout example in test/client-settings.json.example)

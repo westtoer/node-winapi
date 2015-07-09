@@ -2,3 +2,4 @@
 node_modules/
 npm-debug.log
 tmp/
+/test/client-settings.json
