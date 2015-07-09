@@ -21,7 +21,106 @@ var wapi = require('./lib/winapi'),
     PRODUCTS = ['accommodation', 'permanent_offering', 'reca', 'temporary_offering', 'meetingroom'],
     CHANNELS = ['westtoer', 'brugse_ommeland', 'westhoek', 'de_kust', 'leiestreek', 'fietsen_en_wandelen',
                 'kenniscentrum', 'dagtrips_voor_groepen', 'flanders_fields', 'meetingkust', 'autoroutes',
-                'itrip_coast', 'kustwandelroute', 'west-vlinderen', '300_jaar_grens'];
+                'itrip_coast', 'kustwandelroute', 'west-vlinderen', '300_jaar_grens'],
+    GROUPS = {
+        "gastenkamer": ["gastenkamer"],
+        "hotel": ["hotel"],
+        "kampeerlogies": [
+            "camping",
+            "kampeerautoterrein",
+            "minicamping",
+            "verblijfpark",
+            "kampeerhut"],
+        "logies_voor_doelgroepen": [
+            "jeugdverblijf",
+            "vakantiecentrum"
+        ],
+        "vakantielogies": ["vakantielogies"],
+        "vakantiepark": ["vakantiepark"],
+        "vakantiewoning": ["vakantiewoning"],
+        "andere_attracties": [
+            "attractiepark",
+            "pretpark",
+            "speeltuin"],
+        "fietsverhuur": ["fietsverhuur"],
+        "paardrijden": [
+            "huifkartocht",
+            "manege"
+        ],
+        "sport": [
+            "adventure",
+            "golf",
+            "sportaccommodatie",
+            "zwemgelegenheid"],
+        "toeren": ["scooter_solex_verhuur"],
+        "waterrecreatie_attracties": [
+            "aanlegplaats",
+            "jachthaven",
+            "bootverhuur",
+            "kano_kajak_verhuur",
+            "strandclub"
+        ],
+        "andere": [
+            "bezoekerscentrum",
+            "bioscoop",
+            "casino",
+            "cultureel_centrum",
+            "kinderboerderij",
+            "museum",
+            "shop_winkel",
+            "wellness"
+        ],
+        "architectuur_gebouwen": [
+            "belfort",
+            "historisch_gebouw",
+            "monument",
+            "religieus_gebouw"
+        ],
+        "natuur": [
+            "bos",
+            "domein",
+            "park_tuin"
+        ],
+        "oorlog": [
+            "battle_field_tour",
+            "begraafplaats_amerikaans",
+            "begraafplaats_belgisch",
+            "begraafplaats_commonwealth",
+            "begraafplaats_duits",
+            "begraafplaats_frans",
+            "frontvlucht",
+            "oorlogssite"
+        ],
+        "gastronomie": [
+            "brouwerij",
+            "hoeve_om_te_proeven",
+            "stokerij",
+            "wijngaard"
+        ],
+        "toeristische_dienst": ["toeristische_dienst"],
+        "bistro": ["bistro"],
+        "cafe": ["cafe"],
+        "restaurant": ["restaurant"],
+        "tearoom": ["tearoom"],
+        "concert": ["concert"],
+        "festival": ["festival"],
+        "fietsen": ["fietsen"],
+        "film": ["film"],
+        "herdenkingsplechtigheid": ["herdenkingsplechtigheid"],
+        "ijspiste": ["ijspiste"],
+        "shopping": ["shopping"],
+        "speciale_markt": ["speciale_markt"],
+        "sportwedstrijd": ["sportwedstrijd"],
+        "stoet": ["stoet"],
+        "tentoonstelling": ["tentoonstelling"],
+        "theater": ["theater"],
+        "vuurwerk": ["vuurwerk"],
+        "wandelen": ["wandelen"],
+        "waterrecreatie_events": ["waterrecreatie"],
+        "wekelijkse_markt": ["wekelijkse_markt"],
+        "onbepaald": ["onbepaald"],
+        "mice": ["zaal"]
+    };
 
 settings = argv
     .usage('Maakt de win2 dump voor de datahub.\nUsage: $0')
