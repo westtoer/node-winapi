@@ -273,7 +273,7 @@ describe('product-query-testing', function () {
             win.fetch(q.clone().forTouristicTypes(t), check("tourtype_json_" + t, true, function (resp, meta) {
                 typeHisto[t] = meta.pages;
                 c += 1;
-                console.log("t-types reply for %s -- %d/%d -- %d", t, c, types.length, meta.pages);
+                //console.log("t-types reply for %s -- %d/%d -- %d", t, c, types.length, meta.pages);
                 if (c !== types.length) {
                     return;
                 } // else
