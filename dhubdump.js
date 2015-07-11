@@ -5,7 +5,7 @@
 "use strict";
 
 var wapi = require('./lib/winapi'),
-    fs = require('fs'),
+    fs = require('graceful-fs'),
     path = require('path'),
     argv = require('yargs'),
     async = require('async'),
@@ -15,7 +15,7 @@ var wapi = require('./lib/winapi'),
     outDir,
     secret,
     work = [],
-    time = 0,
+    done = {xml: 0, json: 0},
     timeinc,
     FORMATS = {xml: "asXML", json: "asJSON"},
     PERIODS = {week: 7, day: 1},
@@ -83,12 +83,6 @@ function nameJoin() {
     return [].reduce.call(arguments, function (name, part) { return (name.length ? name + "-" : "") + part; }, "");
 }
 
-
-function onNextInterval(fn) {
-    setTimeout(fn, time);
-    time += timeinc;
-}
-
 function perform(task) {
     console.log([
         task.dir,
@@ -120,8 +114,8 @@ function perform(task) {
             remove(ext);
         });
 
-        onNextInterval(function () {
-            win.stream(q.clone().bulk()[fmtMethod](), sink);
+        win.stream(q.clone().bulk()[fmtMethod](), sink, function (res) {
+            done[ext] += 1;
         });
     });
 }
@@ -156,14 +150,13 @@ function assertDirExists(dir) {
 }
 
 function makeTourTypeTasks(pTask) {
-    assertDirExists(path.join(outDir, pTask.dir, "bytourtype"));
+    var dir  = path.join(pTask.dir, "bytourtype");
+    assertDirExists(path.join(outDir, dir));
     return function (tourtype) {
-        var dir  = path.join(pTask.dir, "bytourtype", tourtype),
+        var dir  = path.join(pTask.dir, "bytourtype"), //tourtype),
             task = {dir  : dir,
                     name : nameJoin(pTask.name, tourtype),
                     query: pTask.query.clone().forTouristicTypes(tourtype)};
-
-        assertDirExists(path.join(outDir, dir));
 
         addTask(task);
         Object.keys(PERIODS).forEach(makePeriodTasks(task));
@@ -197,6 +190,7 @@ function makeProductTasks(pTask) {
         Object.keys(PUBSTATES).forEach(makePubTasks(task));
     };
 }
+
 function makeAll() {
     var task = {dir: ".", name: "", query: wapi.query('product')};
     PRODUCTS.forEach(makeProductTasks(task));
@@ -215,11 +209,22 @@ function makeDump() {
     // assemble all the work
     makeAll();
 
+    var cnt = 0;
     win.start(function () {
-        // process all the work
-        work.forEach(perform);
-    });
+        function doNext() {
+            if (cnt < work.length) {
+                // process next
+                perform(work[cnt]);
+                cnt += 1;
+//                console.error("%d/%d == %s% >> estimate finish @%s",
+//                              cnt, work.length, Number(100.0 * cnt / work.length).toFixed(2),
+//                              moment().add(timeinc * (work.length - cnt), 'ms').toISOString());
+                setTimeout(doNext, timeinc);
+            }
+        }
 
+        doNext();
+    });
 }
 
 makeDump(settings.secret, settings.output);
