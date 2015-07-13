@@ -192,9 +192,22 @@ function makeProductTasks(pTask) {
 }
 
 function makeAll() {
-    var task = {dir: ".", name: "", query: wapi.query('product')};
+    var task = {
+        dir: ".",
+        name: "",
+        query: wapi.query('product')
+    };
+
+    //subtasks per products
     PRODUCTS.forEach(makeProductTasks(task));
+
+    //subtasks per channel
     CHANNELS.forEach(makeChannelTasks(task));
+
+    //subtask for all channels together
+    task.name = "allchannels-pub";
+    task.query = task.query.clone().forTypes(PRODUCTS).published();
+    TOURTYPES.forEach(makeTourTypeTasks(task));
 }
 
 function makeDump() {
