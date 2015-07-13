@@ -60,7 +60,7 @@ function check(topic, jsonify, extra) {
     };
 }
 
-describe('product-query-testing', function () {
+describe('product-query build & fetch', function () {
     before(function (done) {
         this.timeout(5000);
         win.start(function () {
@@ -246,13 +246,12 @@ describe('product-query-testing', function () {
         function allCheck(key) {
             return function (resp, meta) {
                 allSum[key] = meta.pages;
+                assert.ok(meta.pages > 0, "filtering on published or not should always yield something.");
                 if (Object.keys(allSum).length !== 3) {
                     return;
                 } //else
-                if (win.verbose) {
-                    console.log("check if published (%d) + hidden (%d) == all(%d) : %s", allSum.pub, allSum.hid, allSum.all,
-                                (allSum.pub + allSum.hid === allSum.all));
-                }
+                assert.ok((allSum.pub + allSum.hid) === allSum.all,
+                          "sum of hidden (" + allSum.hid + ") and public (" + allSum.pub + ") should equal total (" + allSum.all + ")");
                 done();
             };
         }
