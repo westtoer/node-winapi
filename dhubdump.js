@@ -5,6 +5,7 @@
 "use strict";
 
 var wapi = require('./lib/winapi'),
+    rwcsv = require('./lib/rwcsv'),
     fs = require('graceful-fs'),
     path = require('path'),
     argv = require('yargs'),
@@ -15,7 +16,7 @@ var wapi = require('./lib/winapi'),
     outDir,
     secret,
     work = [],
-    done = {xml: 0, json: 0},
+    done = {report: [], count: { xml: 0, json: 0}},
     timeinc,
     FORMATS = {xml: "asXML", json: "asJSON"},
     PERIODS = {week: 7, day: 1},
@@ -83,18 +84,34 @@ function nameJoin() {
     return [].reduce.call(arguments, function (name, part) { return (name.length ? name + "-" : "") + part; }, "");
 }
 
-function perform(task) {
-    console.log([
+function reportDone(ext, task, status) {
+    done.report.push([
         task.dir,
-        task.name,
+        task.name + "." + ext,
         task.query.types.join('|'),
         task.query.touristictypes.join('|'),
         task.query.channels.join('|'),
         task.query.lastmodExpr,
         task.query.softDelState,
-        task.query.pubState
-    ].join(','));
+        task.query.pubState,
+        status
+    ]);
+    done.count[ext] += 1;
+    
+    if (done.count.xml === work.length && done.count.xml === done.count.json) {
+        rwcsv.write(
+            path.join(outDir, "dhubdump-report.csv"),
+            done.report,
+            [
+                "dir", "name", "types", " touristic_types", "channels",
+                "lastmodExpr", "softDelState", "pubState", "status"
+            ]
+        );
+    }
+}
 
+function perform(task) {
+    
     var q = task.query,
         pathname = path.join(outDir, task.dir, task.name);
 
@@ -106,18 +123,21 @@ function perform(task) {
     }
 
     Object.keys(FORMATS).forEach(function (ext) {
-        var fmtMethod = FORMATS[ext],
+        var status, fmtMethod = FORMATS[ext],
             sink = fs.createWriteStream([pathname, ext].join('.'));
 
         sink.on('error', function (e) {
-            console.error("error saving " + pathname + "." + ext + "-->" + e);
             remove(ext);
+            status = "error saving " + pathname + "." + ext + "-->" + e;
+            console.error("error saving " + pathname + "." + ext + "-->" + e);
         });
 
         win.stream(q.clone().bulk()[fmtMethod](), sink, function (res) {
-            done[ext] += 1;
+            if (status === undefined) { status = "ok"; }
+            reportDone(ext, task, status);
         });
     });
+    
 }
 
 function makePeriodTasks(pTask) {
