@@ -33,7 +33,15 @@ The created dump files are named and organized as such:
   <<type>>-<<pubstate>>-<<period-from-to>>.<<format>>
   bychannel/
     <<channel>>/
-        <<type>>-<<channel>>-pub.<<format>>
+        <<channel>>-pub.<<format>>
+        <<channel>>-pub-all-<<period-to-from>>.<<format>>
+        bytourtype/
+          <<channel>>-pub-<<tourtype>>.<<format>>
+          <<channel>>-pub-<<tourtype>>-<<period-from-to>>.<<format>>
+        
+  bytourtype/
+    allchannels-pub-<<tourtype>>.<<format>>
+    allchannels-pub-<<period-from-to>>.<<format>>
 ```
 
 In this structure the following value-replacements can occur:
@@ -56,7 +64,8 @@ key             | possibe values     | meaning
  ```<<format>>```       |xml,  json| file format of the dump
     | xml                |   eXtensible Markup Language
     | json               |   JavaScript Object Notation
- ```<<channel>>```      | 'westtoer', 'brugse_ommeland', 'westhoek', 'de_kust', 'leiestreek', 'fietsen_en_wandelen', 'kenniscentrum', 'dagtrips_voor_groepen', 'flanders_fields', 'meetingkust', 'autoroutes', 'itrip_coast', 'kustwandelroute', 'west-vlinderen', '300_jaar_grens', ...| publication-channel on which the contained items in the dump should be published
+ ```<<channel>>```      |...| publication-channel on which the contained items in the dump should be published
+ ```<<tourtype>>```     |...| one of +80 distinct types from touristic claasification
  
  
  
