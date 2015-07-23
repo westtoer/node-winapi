@@ -48,8 +48,8 @@ var wapi = require('./lib/winapi'),
              "waterrecreatie", "wekelijkse_markt", "wellness", "wijngaard", "zaal", "zwemgelegenheid"];
 
 settings = argv
-    .usage('Maakt de win2 dump voor de datahub.\nUsage: $0')
-    .example('$0  -o ~/feeds/win/2.0/ -s secret', 'Maakt de dump en plaatst die in de aangegeven output-folder.')
+    .usage('Maakt een dump op basis van de win2 API.\nUsage: $0')
+    .example('$0  -o ~/feeds/win/2.0/ -s secret -k products', 'Maakt de product-dump en plaatst die in de aangegeven output-folder.')
 
     .describe('clientid', 'id of the client - requires matching secret')
     .alias('i', 'clientid')
@@ -63,6 +63,10 @@ settings = argv
     .describe('verbose', 'should there be a lot of logging output')
     .alias('v', 'verbose')
     .default('v', false)
+
+    .describe('kind', 'the kind of dump to make: products | token | claims | stats | voc ')
+    .alias('k', 'kind')
+    .default('k', 'products')
 
     .describe('timebetween', 'wait this many millis between requests')
     .alias('t', 'timebetween')
@@ -84,17 +88,17 @@ function nameJoin() {
     return [].reduce.call(arguments, function (name, part) { return (name.length ? name + "-" : "") + part; }, "");
 }
 
-function reportDone(ext, task, status) {
+function reportDone(ext, task, status, uri) {
     done.report.push([
         task.dir,
         task.name + "." + ext,
-        task.query.types.join('|'),
+        task.query.resources.join('|'),
         task.query.touristictypes.join('|'),
         task.query.channels.join('|'),
         task.query.lastmodExpr,
         task.query.softDelState,
         task.query.pubState,
-        status
+        status, uri
     ]);
     done.count[ext] += 1;
     
@@ -104,7 +108,7 @@ function reportDone(ext, task, status) {
             done.report,
             [
                 "dir", "name", "types", " touristic_types", "channels",
-                "lastmodExpr", "softDelState", "pubState", "status"
+                "lastmodExpr", "softDelState", "pubState", "status", "uri"
             ]
         );
     }
@@ -124,7 +128,7 @@ function perform(task) {
 
     Object.keys(FORMATS).forEach(function (ext) {
         var status, fmtMethod = FORMATS[ext],
-            sink = fs.createWriteStream([pathname, ext].join('.'));
+            sink = fs.createWriteStream([pathname, ext].join('.')), qbf;
 
         sink.on('error', function (e) {
             remove(ext);
@@ -132,9 +136,10 @@ function perform(task) {
             console.error("error saving " + pathname + "." + ext + "-->" + e);
         });
 
-        win.stream(q.clone().bulk()[fmtMethod](), sink, function (res) {
+        qbf = q.clone().bulk()[fmtMethod]();
+        win.stream(qbf, sink, function (res) {
             if (status === undefined) { status = "ok"; }
-            reportDone(ext, task, status);
+            reportDone(ext, task, status, qbf.getURI(win, true));
         });
     });
     
@@ -211,12 +216,25 @@ function makeProductTasks(pTask) {
     };
 }
 
-function makeAll() {
+function makeClaimsDump() {
+    var task = {
+        dir: ".",
+        name: "claims",
+        query: wapi.query('claim').partner('*').owner('*')
+    };
+
+    addTask(task);
+}
+
+function makeProductsDump() {
     var task = {
         dir: ".",
         name: "",
         query: wapi.query('product')
     };
+
+    // vocabulary lists
+    // TODO --> but how do we know all vocabularies? for now, just hardcode (based omn shmdoc listings)
 
     //subtasks per products
     PRODUCTS.forEach(makeProductTasks(task));
@@ -230,20 +248,9 @@ function makeAll() {
     TOURTYPES.forEach(makeTourTypeTasks(task));
 }
 
-function makeDump() {
-    // check if the outdir exists --> if not fail fast
-    if (!fs.existsSync(outDir)) {
-        throw "Cannot dump to " + outDir + " - path does not exist.";
-    }
-    if (!fs.statSync(outDir).isDirectory()) {
-        throw "Cannot dump to " + outDir + " - path is not a directory.";
-    }
-
-    // assemble all the work
-    makeAll();
-
+function doDump() {
     var cnt = 0;
-    win.start(function () {
+    function handler() {
         function doNext() {
             if (cnt < work.length) {
                 // process next
@@ -253,11 +260,47 @@ function makeDump() {
 //                              cnt, work.length, Number(100.0 * cnt / work.length).toFixed(2),
 //                              moment().add(timeinc * (work.length - cnt), 'ms').toISOString());
                 setTimeout(doNext, timeinc);
+            } else {
+                win.stop();
             }
         }
 
         doNext();
-    });
+    }
+
+    // check if the outdir exists --> if not fail fast
+    if (settings.kind !== 'token') {
+        if (!fs.existsSync(outDir)) {
+            throw "Cannot dump to " + outDir + " - path does not exist.";
+        }
+        if (!fs.statSync(outDir).isDirectory()) {
+            throw "Cannot dump to " + outDir + " - path is not a directory.";
+        }
+    }
+
+
+    // decide what to do
+    if (settings.kind === 'token') {
+        handler = function () {
+            console.log("token = %s", win.token);
+            win.stop();
+        };
+    } else if (settings.kind === 'products') {
+        // TODO retrieve dynamic lists through the vocabularies.
+        makeProductsDump();
+    } else if (settings.kind === 'claims') {
+        makeClaimsDump();
+//    } else if (settings.kind === 'stats') {
+//        makeStatsDump();
+//    } else if (settings.kind === 'voc') {
+//        makeVocDump();
+    } else {
+        console.error("unknown kind of dump '%s' requested", settings.kind);
+        process.exit(1);
+        return;
+    }
+
+    win.start(handler);
 }
 
-makeDump(settings.secret, settings.output);
+doDump();
