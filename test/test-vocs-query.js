@@ -30,24 +30,22 @@ describe('vocs-query build & fetch', function () {
         win.stop();
     });
 
-    it('should allow to filter for specific vovabulary-name');
+    it('should allow to filter for specific vocabulary-name');
 
     it('should allow bulk retrieval', function (done) {
-        this.timeout(100000);
-        var q = query.clone().asJSON_HAL().size(1);
+        this.timeout(30000);
+        var q = query.clone().asJSON_HAL();
 
-        win.fetch(q.clone(), function (err, list, meta) {
-            assert.isNull(err, "error in fetching size prior to bulk: " + err);
+        win.fetch(q.clone(), function (err, resp, meta) {
             var size = meta.total;
             if (win.verbose) {
                 console.log("full bulk size = %d", size);
             }
-            win.fetch(q.clone().bulk(), function (er2, bulk, met2) {
-                if (win.verbose) {
-                    console.log("size = %d, met2.total = %d, met2.pages = %d, resp.length = %d", size, met2.total, met2.pages, list.length);
-                }
-                assert.equal(met2.total, size, "not same total number of entities");
-                assert.equal(met2.pages, 1, "bulk should return all in one dump");
+            assert.isNull(err, "error retrieving vocabularies size for bulk test " + err);
+            assert.isAbove(size, 0, "zero-length of vocs in bulk");
+            win.fetch(q.clone().asJSON().bulk(), function (er2, bulk) {
+                assert.isNull(er2, "error retrieving vocabularies in bulk " + er2);
+                assert.isAbove(bulk.length, 0, "zero-length of vocs in bulk");
                 assert.equal(bulk.length, size, "real number does not match response");
                 done();
             });

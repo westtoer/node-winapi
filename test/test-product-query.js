@@ -296,8 +296,8 @@ describe('product-query build & fetch', function () {
     });
 
     it('should allow bulk retrieval', function (done) {
-        this.timeout(100000);
-        var q = query.clone().asJSON_HAL().size(1).forTypes(PRODUCTS);
+        this.timeout(30000);
+        var q = query.clone().asJSON_HAL().forTypes(PRODUCTS);
 
         win.fetch(q.clone(), check("prebulk_json_probesize", true, function (resp, meta) {
             var size = meta.total;
@@ -307,13 +307,8 @@ describe('product-query build & fetch', function () {
             assert.isAbove(size, 6000, "too little products in result to meaningfully check the reported 6k limit");
             // this is loading a lot --> might be wise to just stream the json (not hal) variant
             // & then apply tests by reading json through streaming api?
-            win.fetch(q.clone().bulk(), check("bulk_json_fulldump", true, function (resp2, meta2) {
-                if (win.verbose) {
-                    console.log("size = %d, meta2.total = %d, meta2.pages = %d, resp.length = %d", size, meta2.total, meta2.pages, resp.length);
-                }
-                assert.equal(meta2.total, size, "not same total number of entities");
-                assert.equal(meta2.pages, 1, "bulk should return all in one dump");
-                assert.equal(resp.length, size, "real number does not match response");
+            win.fetch(q.clone().asJSON().bulk(), check("bulk_json_fulldump", true, function (bulk) {
+                assert.equal(bulk.length, size, "real number does not match response");
                 done();
             }));
         }));
