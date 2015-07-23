@@ -1,8 +1,6 @@
 /*jslint node: true */
 /*jslint nomen: true */
-/*global describe*/
-/*global it*/
-/*global before*/
+/*global describe, it, before, after */
 
 "use strict";
 
@@ -61,6 +59,8 @@ function check(topic, jsonify, extra) {
 }
 
 describe('product-query build & fetch', function () {
+    var query = wapi.query('product');
+
     before(function (done) {
         this.timeout(5000);
         win.start(function () {
@@ -69,8 +69,12 @@ describe('product-query build & fetch', function () {
         });
     });
 
+    after(function () {
+        win.stop();
+    });
+
     it('should allow default query in all variants', function (done) {
-        var q = wapi.query('product').size(1), c = 0;
+        var q = query.clone().size(1), c = 0;
 
         function end(resp, meta) {
             c += 1;
@@ -87,7 +91,7 @@ describe('product-query build & fetch', function () {
 
     it('should allow to retrieve all types available', function (done) {
         this.timeout(5000);
-        var c = 0, typeHisto = {}, types = PRODUCTS.slice(0), q = wapi.query('product').asJSON_HAL().size(1);
+        var c = 0, typeHisto = {}, types = PRODUCTS.slice(0), q = query.clone().asJSON_HAL().size(1);
 
         //make 2 random groupings and add them to the test
         types.reduce(function (g, t) { g[Math.round(Math.random())].push(t); return g; }, [[], []])
@@ -118,7 +122,7 @@ describe('product-query build & fetch', function () {
         this.timeout(5000);
         var today = moment(), prev = today.clone().subtract(7, 'days'), curs = today.clone(), cut = today.clone().subtract(6, 'days'),
             updateHistos = [], i = 0, c = 0, sum = 0, checkSum = 0, allSum = {},
-            q = wapi.query('product').asJSON_HAL().size(1);
+            q = query.clone().asJSON_HAL().size(1);
 
         function histoHandler(j, fr, to) {
             var key = [fr.format('YYYYMMDD'), to.format('YYYYMMDD')].join(' TO ');
@@ -154,7 +158,7 @@ describe('product-query build & fetch', function () {
 
     it('should allow filtering on lastmodified split over some date', function (done) {
         var cut = moment().subtract(6, 'days'), allSum = {},
-            q = wapi.query('product').asJSON_HAL().size(1);
+            q = query.clone().asJSON_HAL().size(1);
 
         // cut = moment("2015-07-02");
         function allCheck(key) {
@@ -177,7 +181,7 @@ describe('product-query build & fetch', function () {
 
 
     it('should allow filtering on deleted flag', function (done) {
-        var allSum = {}, q = wapi.query('product').asJSON_HAL().size(1);
+        var allSum = {}, q = query.clone().asJSON_HAL().size(1);
 
         function allCheck(key) {
             return function (resp, meta) {
@@ -200,7 +204,7 @@ describe('product-query build & fetch', function () {
 
     it('should allow combined deleted-lastmod filtering', function (done) {
         var allSum = {}, rmOptions = ['removed', 'active'], cut = moment().subtract(6, 'days'),
-            q = wapi.query('product').asJSON_HAL().size(1);
+            q = query.clone().asJSON_HAL().size(1);
 
         function allCheck(key) {
             return function (resp, meta) {
@@ -223,7 +227,7 @@ describe('product-query build & fetch', function () {
 
     it('should allow channel filtering', function (done) {
         this.timeout(5000);
-        var channelsHisto = {}, q = wapi.query('product').asJSON_HAL().forTypes(PRODUCTS).size(1);
+        var channelsHisto = {}, q = query.clone().asJSON_HAL().forTypes(PRODUCTS).size(1);
 
         CHANNELS.forEach(function (c) {
             win.fetch(q.clone().forChannels(c), check("channel_json_" + c, true, function (resp, meta) {
@@ -241,12 +245,14 @@ describe('product-query build & fetch', function () {
 
 
     it('should allow published filtering', function (done) {
-        var allSum = {}, q = wapi.query('product').asJSON_HAL().forTypes(PRODUCTS).size(1);
+        var allSum = {}, q = query.clone().asJSON_HAL().forTypes(PRODUCTS).size(1);
 
         function allCheck(key) {
             return function (resp, meta) {
                 allSum[key] = meta.pages;
-                assert.ok(meta.pages > 0, "filtering on published or not should always yield something.");
+                assert.ok(meta.pages > 0,
+                          "filtering on published key = (" + key +
+                          ") returned " + meta.pages + " pages");
                 if (Object.keys(allSum).length !== 3) {
                     return;
                 } //else
@@ -262,7 +268,7 @@ describe('product-query build & fetch', function () {
 
     it('should allow touristic-type filtering', function (done) {
         this.timeout(5000);
-        var c = 0, typeHisto = {}, types = TOURTYPES.slice(0), q = wapi.query('product').asJSON_HAL().size(1).forTypes(PRODUCTS);
+        var c = 0, typeHisto = {}, types = TOURTYPES.slice(0), q = query.clone().asJSON_HAL().size(1).forTypes(PRODUCTS);
 
         //make 2 random groupings and add them to the test
         types.reduce(function (g, t) { g[Math.round(Math.random())].push(t); return g; }, [[], []])
@@ -291,7 +297,7 @@ describe('product-query build & fetch', function () {
 
     it('should allow bulk retrieval', function (done) {
         this.timeout(100000);
-        var q = wapi.query('product').asJSON_HAL().size(1).forTypes(PRODUCTS);
+        var q = query.clone().asJSON_HAL().size(1).forTypes(PRODUCTS);
 
         win.fetch(q.clone(), check("prebulk_json_probesize", true, function (resp, meta) {
             var size = meta.total;
