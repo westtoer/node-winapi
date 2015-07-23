@@ -132,7 +132,7 @@ function perform(task) {
 
         sink.on('error', function (e) {
             remove(ext);
-            status = "error saving " + pathname + "." + ext + "-->" + e;
+            status = "error :" + e;
             console.error("error saving " + pathname + "." + ext + "-->" + e);
         });
 
