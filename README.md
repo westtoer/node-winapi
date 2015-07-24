@@ -24,7 +24,7 @@ to avoid unnecessary frustration and disappointment.
 ## Default (products) dump
 
 ```
-nodejs dhubdump.js -o ~/feeds/WIN/2.0/ -s <<yoursecret>>
+nodejs dhubdump.js -o ~/feeds/WIN/2.0/ -i <<yourid>> -s <<yoursecret>>
 ```
 This will create the datahub LEVEL0 dump from the WIN 2.0 tdms.
 The created dump files are named and organized as such:
@@ -74,7 +74,7 @@ The content of these files is descibed [here](http://todo-shmdoc-reference)
 
 ## Claims dump
 ```
-nodejs dhubdump.js -o ~/feeds/WIN/2.0/ -s <<yoursecret>> -k claims
+nodejs dhubdump.js -o ~/feeds/WIN/2.0/ -i <<yourid>> -s <<yoursecret>> -k claims
 ```
 This will produce the files claims.xml and claims.json
 
@@ -83,7 +83,7 @@ The content of these files is descibed [here](http://todo-shmdoc-reference)
 
 ## Statistics dump
 ```
-nodejs dhubdump.js -o ~/feeds/WIN/2.0/ -s <<yoursecret>> -k stats
+nodejs dhubdump.js -o ~/feeds/WIN/2.0/ -i <<yourid>> -s <<yoursecret>> -k stats
 ```
 TODO - expected september 2015
 
@@ -92,7 +92,7 @@ The content of these files is descibed [here](http://todo-shmdoc-reference)
 
 ## Vocabulary dump
 ```
-nodejs dhubdump.js -o ~/feeds/WIN/2.0/ -s <<yoursecret>> -k vocs
+nodejs dhubdump.js -o ~/feeds/WIN/2.0/ -i <<yourid>> -s <<yoursecret>> -k vocs
 ```
 TODO - expected september 2015
 
