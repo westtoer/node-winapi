@@ -14,7 +14,7 @@ var wapi = require('./lib/winapi'),
     settings,
     win,
     outDir,
-    secret,
+    dumps,
     work = [],
     done = {report: [], count: { xml: 0, json: 0}},
     timeinc,
@@ -49,7 +49,7 @@ var wapi = require('./lib/winapi'),
 
 settings = argv
     .usage('Maakt een dump op basis van de win2 API.\nUsage: $0')
-    .example('$0  -o ~/feeds/win/2.0/ -s secret -k products', 'Maakt de product-dump en plaatst die in de aangegeven output-folder.')
+    .example('$0  -o ~/feeds/win/2.0/ -s secret products', 'Maakt de product-dump en plaatst die in de aangegeven output-folder.')
 
     .describe('clientid', 'id of the client - requires matching secret')
     .alias('i', 'clientid')
@@ -64,10 +64,6 @@ settings = argv
     .alias('v', 'verbose')
     .default('v', false)
 
-    .describe('kind', 'the kind of dump to make: products | token | claims | stats | voc ')
-    .alias('k', 'kind')
-    .default('k', 'products')
-
     .describe('timebetween', 'wait this many millis between requests')
     .alias('t', 'timebetween')
     .default('t', 100)  //10 requests per second
@@ -79,6 +75,12 @@ settings = argv
 win = wapi.client({secret: settings.secret, clientid: settings.clientid, verbose: settings.verbose});
 outDir = settings.output;
 timeinc = settings.timebetween;
+dumps = settings._ && settings._.length ? settings._ : ['products'];
+
+
+function contains(arr, item) {
+    return (arr.indexOf(item) >= 0);
+}
 
 function addTask(task) {
     work.push(task);
@@ -226,6 +228,16 @@ function makeClaimsDump() {
     addTask(task);
 }
 
+function makeVocDump() {
+    var task = {
+        dir: "reference",
+        name: "taxonomies",
+        query: wapi.query('vocabulary')
+    };
+    assertDirExists(path.join(outDir, task.dir));
+    addTask(task);
+}
+
 function makeProductsDump() {
     var task = {
         dir: ".",
@@ -268,36 +280,36 @@ function doDump() {
         doNext();
     }
 
-    // check if the outdir exists --> if not fail fast
-    if (settings.kind !== 'token') {
+    console.log(dumps);
+
+    // decide what to do
+    if (contains(dumps, 'token')) {
+        console.log('token');
+        handler = function () {
+            console.log("token = %s", win.token);
+            win.stop();
+        };
+    } else {
         if (!fs.existsSync(outDir)) {
             throw "Cannot dump to " + outDir + " - path does not exist.";
         }
         if (!fs.statSync(outDir).isDirectory()) {
             throw "Cannot dump to " + outDir + " - path is not a directory.";
         }
-    }
 
-
-    // decide what to do
-    if (settings.kind === 'token') {
-        handler = function () {
-            console.log("token = %s", win.token);
-            win.stop();
-        };
-    } else if (settings.kind === 'products') {
-        // TODO retrieve dynamic lists through the vocabularies.
-        makeProductsDump();
-    } else if (settings.kind === 'claims') {
-        makeClaimsDump();
-//    } else if (settings.kind === 'stats') {
-//        makeStatsDump();
-//    } else if (settings.kind === 'voc') {
-//        makeVocDump();
-    } else {
-        console.error("unknown kind of dump '%s' requested", settings.kind);
-        process.exit(1);
-        return;
+        // decide which dump-tasks to add...
+        if (contains(dumps, 'products')) {
+            makeProductsDump();
+        }
+        if (contains(dumps, 'claims')) {
+            makeClaimsDump();
+        }
+        if (contains(dumps, 'vocs')) {
+            makeVocDump();
+        }
+//        if (contains(dumps, 'stats')) {
+//            makeStatsDump();
+//        }
     }
 
     win.start(handler);
