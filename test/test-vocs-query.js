@@ -52,6 +52,27 @@ describe('vocs-query build & fetch', function () {
         });
     });
 
+    it('should support parsing vocabularies', function (done) {
+        var q = query.clone().asJSON().bulk();
+        win.fetch(q, function (err, bulk) {
+            var vocCodes = win.parseVocabularyCodes(bulk), vocTrees = win.parseVocabularyTrees(bulk);
+            assert.isNotNull(vocCodes, 'parsed vocab codes should not be null');
+            assert.isNotNull(vocTrees, 'parsed vocab trees should not be null');
+            assert.equal(Object.keys(vocCodes).length, bulk.length, "number of vocabs don't match length of parsed code-lists");
+            assert.equal(Object.keys(vocTrees).length, bulk.length, "number of vocabs don't match length of parsed trees");
+            Object.keys(vocCodes).forEach(function (k) {
+                var vocCode = vocCodes[k], vocTree = vocTrees[k];
+                assert.ok(Array.isArray(vocCode), "voc for name " + k + " is not an array");
+                if (['culturefeed_event_type', 'publicatiekanalen', 'product_types'].indexOf(k) === -1) {
+                    assert.equal(vocCode.length, vocTree.length, "flat list should be no hierarchies for voc = " + k);
+                } else {
+                    assert.isAbove(vocCode.length, vocTree.length, "hierachies should have less top level nodes for voc = " + k);
+                }
+            });
+            done();
+        });
+
+    });
 
     it('should allow content streaming', function (done) {
         var q = query.clone().size(10).asXML(),
