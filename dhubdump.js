@@ -49,7 +49,10 @@ var wapi = require('./lib/winapi'),
 
 settings = argv
     .usage('Maakt een dump op basis van de win2 API.\nUsage: $0')
-    .example('$0  -o ~/feeds/win/2.0/ -s secret products', 'Maakt de product-dump en plaatst die in de aangegeven output-folder.')
+    .example('$0  -o ~/feeds/win/2.0/ -s secret products vocs claims stats token',
+             'Maakt de product-dump van de gekozen categoriën en plaatst die in de aangegeven output-folder.\n' +
+             'Wanneer geen dumps wordn gespecifieerd worden "products vocs" verondersteld.\n' +
+             'Let op: de dump van token is exclusief al de andere en retourneert gewoon snel een accesstoken dan 1h lang gebruikt kan worden.')
 
     .describe('clientid', 'id of the client - requires matching secret')
     .alias('i', 'clientid')
@@ -75,7 +78,7 @@ settings = argv
 win = wapi.client({secret: settings.secret, clientid: settings.clientid, verbose: settings.verbose});
 outDir = settings.output;
 timeinc = settings.timebetween;
-dumps = settings._ && settings._.length ? settings._ : ['products'];
+dumps = settings._ && settings._.length ? settings._ : ['products', 'vocs'];
 
 
 function contains(arr, item) {
@@ -195,8 +198,8 @@ function makeChannelTasks(pTask) {
     return function (channel) {
         var dir  = path.join(pTask.dir, "bychannel", channel),
             task = {dir  : dir,
-                    name : nameJoin(pTask.name, channel, "pub-all"),
-                    query: pTask.query.clone().published().forTypes(PRODUCTS).forChannels(channel + "*")};
+                    name : nameJoin(pTask.name, channel, "all"),
+                    query: pTask.query.clone().forTypes(PRODUCTS).forChannels(channel + "*")};
 
         assertDirExists(path.join(outDir, dir));
 
@@ -204,7 +207,7 @@ function makeChannelTasks(pTask) {
         Object.keys(PERIODS).forEach(makePeriodTasks(task));
 
         //simplify name downwards -
-        task.name = nameJoin(pTask.name, channel, "pub");
+        task.name = nameJoin(pTask.name, channel);
         TOURTYPES.forEach(makeTourTypeTasks(task));
     };
 }
@@ -255,8 +258,8 @@ function makeProductsDump() {
     CHANNELS.forEach(makeChannelTasks(task));
 
     //subtask for all channels together
-    task.name = "allchannels-pub";
-    task.query = task.query.clone().forTypes(PRODUCTS).published();
+    task.name = "allchannels";
+    task.query = task.query.clone().forTypes(PRODUCTS);
     TOURTYPES.forEach(makeTourTypeTasks(task));
 }
 
@@ -279,8 +282,6 @@ function doDump() {
 
         doNext();
     }
-
-    console.log(dumps);
 
     // decide what to do
     if (contains(dumps, 'token')) {

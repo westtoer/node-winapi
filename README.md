@@ -35,15 +35,15 @@ The created dump files are named and organized as such:
   <<type>>-<<pubstate>>-<<period-from-to>>.<<format>>
   bychannel/
     <<channel>>/
-        <<channel>>-pub.<<format>>
-        <<channel>>-pub-all-<<period-to-from>>.<<format>>
+        <<channel>>.<<format>>
+        <<channel>>-all-<<period-to-from>>.<<format>>
         bytourtype/
-          <<channel>>-pub-<<tourtype>>.<<format>>
-          <<channel>>-pub-<<tourtype>>-<<period-from-to>>.<<format>>
+          <<channel>>-<<tourtype>>.<<format>>
+          <<channel>>-<<tourtype>>-<<period-from-to>>.<<format>>
         
   bytourtype/
-    allchannels-pub-<<tourtype>>.<<format>>
-    allchannels-pub-<<period-from-to>>.<<format>>
+    allchannels-<<tourtype>>.<<format>>
+    allchannels-<<period-from-to>>.<<format>>
 ```
 
 In this structure the following value-replacements can occur:
