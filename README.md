@@ -137,6 +137,8 @@ for JSON
 find path/to/root -type f -name \*json | while read f; do cat $f | python -mjson.tool > /dev/null 2>&1; if [ "$?" -ne "0" ]; then >&2 echo "ERROR JSON FILE @ $f"; else echo -n "."; fi; done;
 ```
 
+For convenience a version of the above linting is ran centrally on the datahub instance.  You should be able to grab the ```dhubdump-lintreport.txt```.  That file lists possibly faulty XML or JSON files in the dump.
+
 ### Content Limitation
 
 The content captured in these dump files are eventually maintained by humans. Those, at times, fail too.  
