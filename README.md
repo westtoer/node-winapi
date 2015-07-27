@@ -103,11 +103,6 @@ The content of these files is descibed [here](http://todo-shmdoc-reference)
 
 Considering the wisdom from the [Jon Postel Robustness Principle](https://en.wikipedia.org/wiki/Robustness_principle) we strongly advise all client services of these files to be able to cope with these known limitations:
 
-> Note Also: 
-> 1. It is even better to handle the unknown ones.
-> 1. Please help us maintain this list
-
-
 ### Availability Limitation
 
 The api service occasionally runs into internal performance issues, this will result in files not being available in the dump.
