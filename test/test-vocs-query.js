@@ -52,10 +52,22 @@ describe('vocs-query build & fetch', function () {
         });
     });
 
+    function dumpTree(pfx, t) {
+        if (t === null || t === undefined) {
+            console.log("%s -- done", pfx);
+            return;
+        }
+        t.forEach(function (c) {
+            console.log("%s- %s", pfx, c.code);
+            dumpTree(pfx + "    ", c.children);
+        });
+    }
+
     it('should support parsing vocabularies', function (done) {
         var q = query.clone().asJSON().bulk();
         win.fetch(q, function (err, bulk) {
             var vocCodes = win.parseVocabularyCodes(bulk), vocTrees = win.parseVocabularyTrees(bulk);
+            //dumpTree("", vocTrees.publicatiekanalen);
             assert.isNotNull(vocCodes, 'parsed vocab codes should not be null');
             assert.isNotNull(vocTrees, 'parsed vocab trees should not be null');
             assert.equal(Object.keys(vocCodes).length, bulk.length, "number of vocabs don't match length of parsed code-lists");
