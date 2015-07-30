@@ -96,7 +96,7 @@ function nameJoin() {
 
 function reportDone(ext, task, status, uri) {
     done.report.push([
-        (new Date()).toISOString(),
+        moment().toISOString(),
         task.dir,
         task.name + "." + ext,
         task.query.resources.join('|'),
