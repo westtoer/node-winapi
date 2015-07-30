@@ -35,7 +35,7 @@ var wapi = require('./lib/winapi'),
                 'meetingkust', 'meetingkust_nl', 'meetingkust_fr',
                 '300_jaar_grens', '300_jaar_grens_nl', '300_jaar_grens_fr', '300_jaar_grens_en', '300_jaar_grens_de',
                 'autoroutes', 'itrip_coast', 'kustwandelroute', 'west-vlinderen', 'iedereen_flandrien'],
-    TOURTYPES = ["aanlegplaats", "adventure", "attractiepark", "battle_field_tour", "begraafplaats_amerikaans", "begraafplaats_belgisch",
+    TOURTYPES = ["aanlegplaats", "adventure", "andere", "attractiepark", "battle_field_tour", "begraafplaats_amerikaans", "begraafplaats_belgisch",
              "begraafplaats_commonwealth", "begraafplaats_duits", "begraafplaats_frans", "belfort", "bezoekerscentrum", "bioscoop",
              "bistro", "bootverhuur", "bos", "brouwerij", "cafe", "camping", "casino", "concert", "cultureel_centrum", "domein",
              "festival", "fietsen", "fietsverhuur", "film", "frontvlucht", "gastenkamer", "golf", "herdenkingsplechtigheid",
@@ -49,10 +49,11 @@ var wapi = require('./lib/winapi'),
 
 settings = argv
     .usage('Maakt een dump op basis van de win2 API.\nUsage: $0')
-    .example('$0  -o ~/feeds/win/2.0/ -s secret products vocs claims stats token',
-             'Maakt de product-dump van de gekozen categoriën en plaatst die in de aangegeven output-folder.\n' +
-             'Wanneer geen dumps wordn gespecifieerd worden "products vocs" verondersteld.\n' +
-             'Let op: de dump van token is exclusief al de andere en retourneert gewoon snel een accesstoken dan 1h lang gebruikt kan worden.')
+    .example('$0  -o ~/feeds/win/2.0/ -s secret [dumpspecs*]',
+             'Maakt de product-dump van de gekozen categoriën (dumpspecs) en plaatst die in de aangegeven output-folder.\n' +
+             'Wanneer geen dumps worden gedspecifieerd worden "products vocs samples" verondersteld.\n' +
+             'Numerieke dumpspecs worden aanzien als "id" van de uniek op te halen items.\n' +
+             'Let op: de dump van "token" is exclusief al de andere en retourneert gewoon snel een accesstoken dan 1h lang gebruikt kan worden.')
 
     .describe('clientid', 'id of the client - requires matching secret')
     .alias('i', 'clientid')
@@ -78,7 +79,7 @@ settings = argv
 win = wapi.client({secret: settings.secret, clientid: settings.clientid, verbose: settings.verbose});
 outDir = settings.output;
 timeinc = settings.timebetween;
-dumps = settings._ && settings._.length ? settings._ : ['products', 'vocs'];
+dumps = settings._ && settings._.length ? settings._ : ['products', 'vocs', 'samples'];
 
 
 function contains(arr, item) {
@@ -241,6 +242,37 @@ function makeVocDump() {
     addTask(task);
 }
 
+function makeIdTask(pTask) {
+    return function (id) {
+        var task = {dir  : pTask.dir,
+                    name : nameJoin(pTask.name, id),
+                    query: pTask.query.clone().id(id)};
+        addTask(task);
+    };
+}
+
+function makeSingleIdDump(id) {
+    var task = {
+        dir: "samples",
+        name: "item",
+        query: wapi.query('product').forTypes(PRODUCTS).id(id)
+    };
+    assertDirExists(path.join(outDir, task.dir));
+    makeIdTask(task)(id);
+}
+
+function makeSampleIdsDump() {
+    var SAMPLEIDS = [33346, 53249, 53302, 53303, 53304, 53306, 53307, 53308, 53309, 53310, 53311, 53312, 53313, 53314, 53315, 53381, 53382, 53383, 53384],
+        task = {
+            dir: "samples",
+            name: "sample",
+            query: wapi.query('product').forTypes(PRODUCTS)
+        };
+
+    assertDirExists(path.join(outDir, task.dir));
+    SAMPLEIDS.forEach(makeIdTask(task));
+}
+
 function makeProductsDump() {
     var task = {
         dir: ".",
@@ -298,19 +330,22 @@ function doDump() {
             throw "Cannot dump to " + outDir + " - path is not a directory.";
         }
 
-        // decide which dump-tasks to add...
-        if (contains(dumps, 'products')) {
-            makeProductsDump();
-        }
-        if (contains(dumps, 'claims')) {
-            makeClaimsDump();
-        }
-        if (contains(dumps, 'vocs')) {
-            makeVocDump();
-        }
-//        if (contains(dumps, 'stats')) {
-//            makeStatsDump();
-//        }
+        dumps.forEach(function (d) {
+            // decide which dump-tasks to add...
+            if (d === 'products') {
+                makeProductsDump();
+            } else if (d === 'claims') {
+                makeClaimsDump();
+            } else if (d === 'vocs') {
+                makeVocDump();
+//            } else if (d === 'stats') {
+//                makeStatsDump();
+            } else if (d === 'samples') {
+                makeSampleIdsDump();
+            } else if (!isNaN(Number(d))) {
+                makeSingleIdDump(d);
+            }
+        });
     }
 
     win.start(handler);

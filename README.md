@@ -1,4 +1,5 @@
-# Note
+# Note upfront
+
 ## Auth credentials required
 You need to ask win (at) westtoer.be a required api-key (id and secret) to consume this api directly (which is, by the way, not recommended).
 
@@ -16,15 +17,31 @@ Please, be a sport and run the typical
 ```
 npm install
 ```
-to avoid unnecessary frustration and disappointment.
+before trying further, to avoid unnecessary frustration and disappointment.
 
 
 # Usage
 
-## Default (products) dump
+## Default dump
 
+The default (no dump-specifications) dump:
 ```
 nodejs dhubdump.js -o ~/feeds/WIN/2.0/ -i <<yourid>> -s <<yoursecret>>
+```
+
+is equivalent to:
+```
+nodejs dhubdump.js -o ~/feeds/WIN/2.0/ -i <<yourid>> -s <<yoursecret>> products vocs samples
+```
+
+meaning that it will combine those 3 dumps in one run.
+
+
+
+## Products dump
+
+```
+nodejs dhubdump.js -o ~/feeds/WIN/2.0/ -i <<yourid>> -s <<yoursecret>> products
 ```
 This will create the datahub LEVEL0 dump from the WIN 2.0 tdms.
 The created dump files are named and organized as such:
@@ -48,7 +65,6 @@ The created dump files are named and organized as such:
 
 In this structure the following value-replacements can occur:
 
-
 key             | possibe values     | meaning
 ----------------|--------------------|--------
  ```<<type>>```         |...| type of touristic item in the dump
@@ -67,36 +83,62 @@ key             | possibe values     | meaning
     | xml                |   eXtensible Markup Language
     | json               |   JavaScript Object Notation
  ```<<channel>>```      |...| publication-channel on which the contained items in the dump should be published
- ```<<tourtype>>```     |...| one of +80 distinct types from touristic claasification
+ ```<<tourtype>>```     |...| one of +80 distinct types from touristic classification (see taxonomy produced by the vocs dump)
  
+The content of these files is descibed [here](https://goo.gl/0O1BWC)
+
+
+## Vocabulary dump
+```
+nodejs dhubdump.js -o ~/feeds/WIN/2.0/ -i <<yourid>> -s <<yoursecret>> vocs
+```
+
+This dump produces:
+```
+[ROOT]/
+  reference/
+    taxonomies.<<format>>
+```
+
+
 The content of these files is descibed [here](http://todo-shmdoc-reference)
+
+
+## Samples dump
+```
+nodejs dhubdump.js -o ~/feeds/WIN/2.0/ -i <<yourid>> -s <<yoursecret>> samples
+```
+
+This dump produces:
+```
+[ROOT]/
+  samples/
+    sample-<<id>>.<<format>>
+```
+
+Containing export-files holding single-item information, identified by their id.
+The content of these files follows the previsously mentioned 'products' layout.
+
 
 
 ## Claims dump
 ```
-nodejs dhubdump.js -o ~/feeds/WIN/2.0/ -i <<yourid>> -s <<yoursecret>> -k claims
+nodejs dhubdump.js -o ~/feeds/WIN/2.0/ -i <<yourid>> -s <<yoursecret>> claims
 ```
 This will produce the files claims.xml and claims.json
 
 The content of these files is descibed [here](http://todo-shmdoc-reference)
 
 
+
 ## Statistics dump
 ```
-nodejs dhubdump.js -o ~/feeds/WIN/2.0/ -i <<yourid>> -s <<yoursecret>> -k stats
+nodejs dhubdump.js -o ~/feeds/WIN/2.0/ -i <<yourid>> -s <<yoursecret>> stats
 ```
 TODO - expected september 2015
 
 The content of these files is descibed [here](http://todo-shmdoc-reference)
 
-
-## Vocabulary dump
-```
-nodejs dhubdump.js -o ~/feeds/WIN/2.0/ -i <<yourid>> -s <<yoursecret>> -k vocs
-```
-TODO - expected september 2015
-
-The content of these files is descibed [here](http://todo-shmdoc-reference)
 
 
 ## Known Limitations
@@ -130,11 +172,11 @@ We advise using some linting techniques or other safety checks to verify this. O
 
 for XML
 ```
-find path/to/root -type f -name \*xml | while read f; do xmllint --noout $f > /dev/null 2>&1; if [ "$?" -ne "0" ]; then >&2 echo "ERROR XML FILE @ $f"; else echo -n "."; fi; done;
+find path/to/root -type f -name \*xml | while read f; do out=$(xmllint --noout $f 2>&1); err=$?; oln=$(echo -n "${out}"|wc -c); if [ "${err}${oln}" -ne "00" ]; then echo "ERROR  XML FILE @ $f"; fi; done;
 ```
 for JSON
 ```
-find path/to/root -type f -name \*json | while read f; do cat $f | python -mjson.tool > /dev/null 2>&1; if [ "$?" -ne "0" ]; then >&2 echo "ERROR JSON FILE @ $f"; else echo -n "."; fi; done;
+find path/to/root -type f -name \*json | while read f; do cat $f | python -mjson.tool > /dev/null 2>&1; if [ "$?" -ne "0" ]; then >&2 echo "ERROR JSON FILE @ $f"; fi; done;
 ```
 
 For convenience a version of the above linting is ran centrally on the datahub instance.  You should be able to grab the ```dhubdump-lintreport.txt```.  That file lists possibly faulty XML or JSON files in the dump.
