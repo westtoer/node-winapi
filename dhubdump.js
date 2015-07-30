@@ -95,6 +95,7 @@ function nameJoin() {
 
 function reportDone(ext, task, status, uri) {
     done.report.push([
+        (new Date()).toISOString(),
         task.dir,
         task.name + "." + ext,
         task.query.resources.join('|'),
@@ -112,7 +113,7 @@ function reportDone(ext, task, status, uri) {
             path.join(outDir, "dhubdump-report.csv"),
             done.report,
             [
-                "dir", "name", "types", " touristic_types", "channels",
+                "time", "dir", "name", "types", " touristic_types", "channels",
                 "lastmodExpr", "softDelState", "pubState", "status", "uri"
             ]
         );
