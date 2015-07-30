@@ -31,6 +31,8 @@ describe('vocs-query build & fetch', function () {
     });
 
     it('should allow to filter for specific vocabulary-name');
+    // in doubth if we really need it: the total voc xml is small enough to retrieve as a whole and parse and split locally
+
 
     it('should allow bulk retrieval', function (done) {
         this.timeout(30000);
@@ -83,7 +85,29 @@ describe('vocs-query build & fetch', function () {
             });
             done();
         });
+    });
 
+    it('should support parsing selected vocabularies', function (done) {
+        var q = query.clone().asJSON().bulk(), names = ['publicatiekanalen', 'product_types'];
+        win.fetch(q, function (err, bulk) {
+            var vocCodes = win.parseVocabularyCodes(bulk, names), vocTrees = win.parseVocabularyTrees(bulk, names);
+            //dumpTree("", vocTrees.publicatiekanalen);
+            //console.log(vocCodes.product_types.sort());
+            assert.isNotNull(vocCodes, 'parsed vocab codes should not be null');
+            assert.isNotNull(vocTrees, 'parsed vocab trees should not be null');
+            assert.equal(Object.keys(vocCodes).length, names.length, "number of vocabs don't match length of parsed code-lists");
+            assert.equal(Object.keys(vocTrees).length, names.length, "number of vocabs don't match length of parsed trees");
+            names.forEach(function (k) {
+                var vocCode = vocCodes[k], vocTree = vocTrees[k];
+                assert.ok(Array.isArray(vocCode), "voc for name " + k + " is not an array");
+                if (['culturefeed_event_type', 'publicatiekanalen', 'product_types'].indexOf(k) === -1) {
+                    assert.equal(vocCode.length, vocTree.length, "flat list should be no hierarchies for voc = " + k);
+                } else {
+                    assert.isAbove(vocCode.length, vocTree.length, "hierachies should have less top level nodes for voc = " + k);
+                }
+            });
+            done();
+        });
     });
 
     it('should allow content streaming', function (done) {
