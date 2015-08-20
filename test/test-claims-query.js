@@ -17,7 +17,7 @@ var chai = require('chai'),
 
 
 describe('claims-query build & fetch', function () {
-    var query = wapi.query('claim');
+    var query = wapi.query('claim').requireFields(["claims.claim.owner.email_address", "partner_id"]);
 
     before(function (done) {
         this.timeout(5000);
@@ -33,7 +33,7 @@ describe('claims-query build & fetch', function () {
 
     it('should allow to filter for product-partner-id and owner-email', function (done) {
         this.timeout(5000);
-        var q = query.clone().asJSON_HAL().partner('*').owner('*');
+        var q = query.clone().asJSON_HAL().partner(3495).owner('marc\\.portier.*');
 
         win.fetch(q.clone(), function (err, list, meta) {
             assert.isNull(err, "unexpected error: " + err);
@@ -65,7 +65,7 @@ describe('claims-query build & fetch', function () {
 
 
     it('should allow content streaming', function (done) {
-        var q = query.clone().partner('*').owner('*').size(10).asXML(),
+        var q = query.clone().size(10).asXML(),
             sink = fs.createWriteStream(path.join("tmp", "claims.xml"));
 
         win.stream(q.clone(), sink, function (res) {

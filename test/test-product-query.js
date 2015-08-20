@@ -12,9 +12,9 @@ var chai = require('chai'),
     moment = require('moment'),
 
     PRODUCTS = ['accommodation', 'permanent_offering', 'reca', 'temporary_offering', 'meetingroom'],
-    CHANNELS = ["westtoer*", "brugse_ommeland*", "westhoek*", "de_kust*", "leiestreek*", "fietsen_en_wandelen*",
-                "kenniscentrum*", "dagtrips_voor_groepen*", "flanders_fields*", "meetingkust*", "autoroutes*",
-                "itrip_coast*", "kustwandelroute*", "west-vlinderen*", "300_jaar_grens*"],
+    CHANNELS = ["westtoer.*", "brugse_ommeland.*", "westhoek.*", "de_kust.*", "leiestreek.*", "fietsen_en_wandelen.*",
+                "kenniscentrum.*", "dagtrips_voor_groepen.*", "flanders_fields.*", "meetingkust.*", "autoroutes.*",
+                "itrip_coast.*", "kustwandelroute.*", "west-vlinderen.*", "300_jaar_grens.*"],
     TOURTYPES = ["aanlegplaats", "adventure", "attractiepark", "battle_field_tour", "begraafplaats_amerikaans", "begraafplaats_belgisch",
                  "begraafplaats_commonwealth", "begraafplaats_duits", "begraafplaats_frans", "belfort", "bezoekerscentrum", "bioscoop",
                  "bistro", "bootverhuur", "bos", "brouwerij", "cafe", "camping", "casino", "concert", "cultureel_centrum", "domein",
@@ -334,7 +334,7 @@ describe('product-query build & fetch', function () {
         win.fetch(q, function (e, o, m) {
             assert.isNull(e, "unexpected error during general fetch to find an id");
             assert.isAbove(o.length, 0, "no avaialble items to continue test");
-            var item = o[0], someId = item.metadata.tdms__id;
+            var item = o[0], someId = item.metadata.id;
 
             win.fetch(q.clone().id(someId), function (err, obj, meta) {
                 assert.isNull(err, "unexpected error furing id-fetch");
@@ -351,14 +351,14 @@ describe('product-query build & fetch', function () {
             assert.isNull(e, "unexpected error during _exist_ filter request");
             assert.isAbove(o.length, 0, "no avaialble items to continue test");
             o.forEach(function (item, item_ndx) {
-                var channels = item.publishing_channels.tdms__publishing_channel;
+                var channels = item.publishing_channels.publishing_channel;
                 assert.ok(channels, "there should be channels on item[" + item_ndx + "] in this resultset");
                 assert.isAbove(channels.length, 0, "there should be at least one channel on item[" + item_ndx + "] in this resultset");
 
                 channels.forEach(function (ch, ch_ndx) {
                     assert.ok(ch, "there should be a valid channel on item[" + item_ndx + "]");
 
-                    var code = ch["@code"];
+                    var code = ch.code;
                     assert.ok(code, "the channel[" + ch_ndx + "] of item[" + item_ndx + "] should have a code");
                 });
             });
