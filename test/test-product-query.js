@@ -317,7 +317,7 @@ describe('product-query build & fetch', function () {
 
     it('should allow content streaming', function (done) {
         var q = wapi.query().size(1).asJSON(),
-            sink = fs.createWriteStream(path.join("tmp", "test.json"));
+            sink = fs.createWriteStream(path.join("tmp", "products-1.json"));
 
         win.stream(q.clone(), sink, function (res) {
             res

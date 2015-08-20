@@ -66,7 +66,7 @@ describe('claims-query build & fetch', function () {
 
     it('should allow content streaming', function (done) {
         var q = query.clone().size(10).asXML(),
-            sink = fs.createWriteStream(path.join("tmp", "claims.xml"));
+            sink = fs.createWriteStream(path.join("tmp", "claims-1-10.xml"));
 
         win.stream(q.clone(), sink, function (res) {
             res

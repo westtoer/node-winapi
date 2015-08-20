@@ -111,8 +111,8 @@ describe('vocs-query build & fetch', function () {
     });
 
     it('should allow content streaming', function (done) {
-        var q = query.clone().size(10).asXML(),
-            sink = fs.createWriteStream(path.join("tmp", "vocs.xml"));
+        var q = query.clone().size(10).asJSON(),
+            sink = fs.createWriteStream(path.join("tmp", "vocs-1-10.json"));
 
         win.stream(q.clone(), sink, function (res) {
             res
