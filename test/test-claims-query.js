@@ -23,6 +23,8 @@ describe('claims-query build & fetch', function () {
         this.timeout(5000);
         win.start(function () {
             assert.isNotNull(win.token, "no auth token received in test-before");
+            assert.equal(query.requiredFields.length, 2);
+            assert.equal(query.clone().requiredFields.length, 2);
             done();
         });
     });
@@ -34,6 +36,7 @@ describe('claims-query build & fetch', function () {
     it('should allow to filter for product-partner-id and owner-email', function (done) {
         this.timeout(5000);
         var q = query.clone().asJSON_HAL().partner(3495).owner('marc\\.portier.*');
+        assert.equal(q.requiredFields.length, 2);
 
         win.fetch(q.clone(), function (err, list, meta) {
             assert.isNull(err, "unexpected error: " + err);
@@ -46,6 +49,7 @@ describe('claims-query build & fetch', function () {
     it('should allow bulk retrieval', function (done) {
         this.timeout(30000);
         var q = query.clone().asJSON_HAL();
+        assert.equal(q.requiredFields.length, 2);
 
         win.fetch(q.clone(), function (err, resp, meta) {
             var size = meta.total;
@@ -67,6 +71,7 @@ describe('claims-query build & fetch', function () {
     it('should allow content streaming', function (done) {
         var q = query.clone().size(10).asXML(),
             sink = fs.createWriteStream(path.join("tmp", "claims-1-10.xml"));
+        assert.equal(q.requiredFields.length, 2);
 
         win.stream(q.clone(), sink, function (res) {
             res
