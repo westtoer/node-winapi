@@ -68,6 +68,10 @@ settings = argv
     .alias('v', 'verbose')
     .default('v', false)
 
+    .describe('progress', 'should there be a logging of the progress')
+    .alias('p', 'progress')
+    .default('p', false)
+
     .describe('timebetween', 'wait this many millis between requests')
     .alias('t', 'timebetween')
     .default('t', 100)  //10 requests per second
@@ -109,6 +113,10 @@ function reportDone(ext, task, status, uri) {
     ]);
     done.count[ext] += 1;
     
+    if (settings.progress) {
+        console.log("done xml %d - json %d off %d", done.count.xml, done.count.json, work.length);
+    }
+
     if (done.count.xml === work.length && done.count.xml === done.count.json) {
         rwcsv.write(
             path.join(outDir, "dhubdump-report.csv"),
@@ -158,8 +166,8 @@ function makePeriodTasks(pTask) {
         var days = PERIODS[period],
             from = to.clone().subtract(days, 'days'),
             task = {dir  : pTask.dir,
-                    name : nameJoin(pTask.name, period, from.format('YYYYMMDD'), to.format('YYYYMMDD')),
-                    query: pTask.query.clone().lastmodBetween(from, to)};
+                    name : nameJoin(pTask.name, period, from.format('YYYYMMDD'), 'current'),
+                    query: pTask.query.clone().lastmodBetween(from, null)};
         addTask(task);
     };
 }
@@ -201,7 +209,7 @@ function makeChannelTasks(pTask) {
         var dir  = path.join(pTask.dir, "bychannel", channel),
             task = {dir  : dir,
                     name : nameJoin(pTask.name, channel, "all"),
-                    query: pTask.query.clone().forTypes(PRODUCTS).forChannels(channel + "*")};
+                    query: pTask.query.clone().forTypes(PRODUCTS).forChannels(channel + ".*")};
 
         assertDirExists(path.join(outDir, dir));
 
@@ -227,7 +235,7 @@ function makeClaimsDump() {
     var task = {
         dir: ".",
         name: "claims",
-        query: wapi.query('claim').partner('*').owner('*')
+        query: wapi.query('claim').requireFields(["claims.claim.owner.email_address", "partner_id"])
     };
 
     addTask(task);

@@ -56,11 +56,11 @@ The created dump files are named and organized as such:
         <<channel>>-all-<<period-to-from>>.<<format>>
         bytourtype/
           <<channel>>-<<tourtype>>.<<format>>
-          <<channel>>-<<tourtype>>-<<period-from-to>>.<<format>>
+          <<channel>>-<<tourtype>>-<<period-from>>.<<format>>
         
   bytourtype/
     allchannels-<<tourtype>>.<<format>>
-    allchannels-<<period-from-to>>.<<format>>
+    allchannels-<<period-from>>.<<format>>
 ```
 
 In this structure the following value-replacements can occur:
@@ -76,9 +76,9 @@ key             | possibe values     | meaning
  ```<<pubstate>>```     |all, pub| publication states of the items in the dump
     | all                |   all items, ignoring their published state
     | pub                |   only items in the published state
- ```<<period-from-to>>```|week, day + YYYYMMDD dates| indicating a subset of last-modified items in the indicated (by name and boundaries) period of time, from date is inclusive, end date is exclusive
-    | week-YYYYMMDD-YYYYMMDD |   7 day period, items updated during the week leading up to today
-    | day-YYYYMMDD-YYYYMMDD  |   1 day period, items updated during the day
+ ```<<period-from>>```|week, day + YYYYMMDD startdate| indicating a subset of last-modified items in the indicated (by name and boundaries) period of time, from date is inclusive, end date is open to the moment of dump-generation -- this assumes to run these around, but distinctly before the end of the day.
+    | week-YYYYMMDD-current |   7 day period, items updated during the week leading up to today
+    | day-YYYYMMDD-current  |   1 day period, items updated since yesterday up to now
  ```<<format>>```       |xml,  json| file format of the dump
     | xml                |   eXtensible Markup Language
     | json               |   JavaScript Object Notation
