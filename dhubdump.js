@@ -98,11 +98,20 @@ function nameJoin() {
     return [].reduce.call(arguments, function (name, part) { return (name.length ? name + "-" : "") + part; }, "");
 }
 
-function reportDone(ext, task, status, uri) {
+
+function reportDone(ext, task, status, uri, ts_start, open_start, size, mime) {
+    var ts_end = moment(), open_end, duration;
+
     done.count[ext] += 1;
-    var openconnections = (2 * (work.pointer + 1)) - (done.count.xml + done.count.json);
+    work.open -= 1;
+
+    open_end = work.open;
+    duration = ts_end.diff(ts_start);
+
     done.report.push([
-        moment().toISOString(),
+        ts_start.toISOString(),
+        ts_end.toISOString(),
+        duration,
         task.dir,
         task.name + "." + ext,
         task.query.resources.join('|'),
@@ -111,12 +120,13 @@ function reportDone(ext, task, status, uri) {
         task.query.lastmodRange ? task.query.lastmodRange.gte : "",
         task.query.softDelState,
         task.query.pubState,
-        status, uri, openconnections
+        status, uri,
+        open_start, open_end, size, mime
     ]);
     
     if (settings.progress) {
-        console.log("done xml %d - json %d off %d - currently open connections == %d",
-                    done.count.xml, done.count.json, work.length, openconnections);
+        console.log("done xml %d - json %d off %d \t- open connections == %d > %d \t- size %d \t- mime = %s",
+                    done.count.xml, done.count.json, work.length, open_start, open_end, size, mime);
     }
 
     if (done.count.xml === work.length && done.count.xml === done.count.json) {
@@ -124,11 +134,25 @@ function reportDone(ext, task, status, uri) {
             path.join(outDir, "dhubdump-report.csv"),
             done.report,
             [
-                "time", "dir", "name", "types", " touristic_types", "channels",
-                "lastmod GTE", "softDelState", "pubState", "status", "uri", "open"
+                "ts_start", "ts_end", "duration (ms)", "dir", "name", "types", " touristic_types", "channels",
+                "lastmod GTE", "softDelState", "pubState", "status", "uri",
+                "open on start", "open on close", "content-length", "content-type"
             ]
         );
     }
+}
+
+function remove(fname) {
+    if (fs.existsSync(fname)) {
+        fs.unlinkSync(fname);
+    }
+}
+
+function size(fname) {
+    if (!fs.existsSync(fname)) {
+        return -1;
+    } // else
+    return fs.statSync(fname).size;
 }
 
 function perform(task) {
@@ -136,27 +160,35 @@ function perform(task) {
     var q = task.query,
         pathname = path.join(outDir, task.dir, task.name);
 
-    function remove(ext) {
-        var fname = [pathname, ext].join('.');
-        if (fs.existsSync(fname)) {
-            fs.unlinkSync(fname);
-        }
-    }
 
     Object.keys(FORMATS).forEach(function (ext) {
         var status, fmtMethod = FORMATS[ext],
-            sink = fs.createWriteStream([pathname, ext].join('.')), qbf;
+            fname = [pathname, ext].join('.'),
+            ts, open, uri,
+            sink = fs.createWriteStream(fname), qbf;
 
         sink.on('error', function (e) {
-            remove(ext);
+            remove(fname);
             status = "error :" + e;
             console.error("error saving " + pathname + "." + ext + "-->" + e);
         });
 
         qbf = q.clone().bulk()[fmtMethod]();
+        uri = qbf.getURI(win, true);
+        ts = moment();
+        open = work.open;
+
+        work.open += 1;
         win.stream(qbf, sink, function (res) {
-            if (status === undefined) { status = "ok"; }
-            reportDone(ext, task, status, qbf.getURI(win, true));
+            if (status === undefined) {
+                //wait for completion to be able to size the file.
+                //this because apparently there is no content-length header
+                res.on('end', function () {
+                    reportDone(ext, task, "ok", uri, ts, open, size(fname), res.headers['content-type']);
+                });
+            } else {
+                reportDone(ext, task, status, uri, ts, open, -1, "");
+            }
         });
     });
     
@@ -307,13 +339,14 @@ function makeProductsDump() {
 }
 
 function doDump() {
-    work.pointer = 0;
+    var cnt = 0;
+    work.open = 0;
     function handler() {
         function doNext() {
-            if (work.pointer < work.length) {
+            if (cnt < work.length) {
                 // process next
-                perform(work[work.pointer]);
-                work.pointer += 1;
+                perform(work[cnt]);
+                cnt += 1;
                 setTimeout(doNext, timeinc);
             } else {
                 win.stop();
