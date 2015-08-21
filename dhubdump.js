@@ -100,7 +100,7 @@ function nameJoin() {
 
 function reportDone(ext, task, status, uri) {
     done.count[ext] += 1;
-    var openconnections = (2 * work.pointer) - (done.count.xml + done.count.json);
+    var openconnections = (2 * (work.pointer + 1)) - (done.count.xml + done.count.json);
     done.report.push([
         moment().toISOString(),
         task.dir,
