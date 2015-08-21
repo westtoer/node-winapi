@@ -99,6 +99,8 @@ function nameJoin() {
 }
 
 function reportDone(ext, task, status, uri) {
+    done.count[ext] += 1;
+    var openconnections = (2 * work.pointer) - (done.count.xml + done.count.json);
     done.report.push([
         moment().toISOString(),
         task.dir,
@@ -106,15 +108,15 @@ function reportDone(ext, task, status, uri) {
         task.query.resources.join('|'),
         task.query.touristictypes.join('|'),
         task.query.channels.join('|'),
-        task.query.lastmodExpr,
+        task.query.lastmodRange ? task.query.lastmodRange.gte : "",
         task.query.softDelState,
         task.query.pubState,
-        status, uri
+        status, uri, openconnections
     ]);
-    done.count[ext] += 1;
     
     if (settings.progress) {
-        console.log("done xml %d - json %d off %d", done.count.xml, done.count.json, work.length);
+        console.log("done xml %d - json %d off %d - currently open connections == %d",
+                    done.count.xml, done.count.json, work.length, openconnections);
     }
 
     if (done.count.xml === work.length && done.count.xml === done.count.json) {
@@ -123,7 +125,7 @@ function reportDone(ext, task, status, uri) {
             done.report,
             [
                 "time", "dir", "name", "types", " touristic_types", "channels",
-                "lastmodExpr", "softDelState", "pubState", "status", "uri"
+                "lastmod GTE", "softDelState", "pubState", "status", "uri", "open"
             ]
         );
     }
@@ -305,16 +307,13 @@ function makeProductsDump() {
 }
 
 function doDump() {
-    var cnt = 0;
+    work.pointer = 0;
     function handler() {
         function doNext() {
-            if (cnt < work.length) {
+            if (work.pointer < work.length) {
                 // process next
-                perform(work[cnt]);
-                cnt += 1;
-//                console.error("%d/%d == %s% >> estimate finish @%s",
-//                              cnt, work.length, Number(100.0 * cnt / work.length).toFixed(2),
-//                              moment().add(timeinc * (work.length - cnt), 'ms').toISOString());
+                perform(work[work.pointer]);
+                work.pointer += 1;
                 setTimeout(doNext, timeinc);
             } else {
                 win.stop();
