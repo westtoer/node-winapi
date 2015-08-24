@@ -1,6 +1,7 @@
 /*jslint node: true */
 /*jslint es5: true */
 /*jslint nomen: true */
+/*global setImmediate */
 
 "use strict";
 
@@ -338,58 +339,95 @@ function makeProductsDump() {
     TOURTYPES.forEach(makeTourTypeTasks(task));
 }
 
-function doDump() {
+function loadReferences(done) {
+    var channels, types;
+
+    function getChannels(cb) {
+
+        //TODO perform logic to get list of channels from vocabulary
+        // channels voc is a hierarchy but we want group levels as well --> we assume .* will work --> warn if not
+        setImmediate(function () {
+            cb(null, "");
+        });
+    }
+
+    function getTypes(cb) {
+
+        //TODO perform logic to get list of low-level-types from vocabulary
+        // tourtypes voc is a hierachy but we only want lowest levels
+        setImmediate(function () {
+            cb(null, "");
+        });
+    }
+
+    async.parallel([getChannels, getTypes], function (err, result) {
+        done();
+    });
+    return;
+}
+
+function assembleWork() {
+    dumps.forEach(function (d) {
+        // decide which dump-tasks to add...
+        if (d === 'products') {
+            makeProductsDump();
+        } else if (d === 'claims') {
+            makeClaimsDump();
+        } else if (d === 'vocs') {
+            makeVocDump();
+//            } else if (d === 'stats') {
+//                makeStatsDump();
+        } else if (d === 'samples') {
+            makeSampleIdsDump();
+        } else if (!isNaN(Number(d))) {
+            makeSingleIdDump(d);
+        }
+    });
+}
+
+function doWork(done) {
     var cnt = 0;
     work.open = 0;
-    function handler() {
-        function doNext() {
-            if (cnt < work.length) {
-                // process next
-                perform(work[cnt]);
-                cnt += 1;
-                setTimeout(doNext, timeinc);
-            } else {
-                win.stop();
-            }
+    function doNext() {
+        if (cnt < work.length) {
+            // process next
+            perform(work[cnt]);
+            cnt += 1;
+            setTimeout(doNext, timeinc);
+        } else {
+            done();
         }
-
-        doNext();
     }
+
+    doNext();
+}
+
+
+function doDump() {
 
     // decide what to do
     if (contains(dumps, 'token')) {
         console.log('token');
-        handler = function () {
+        win.start(function () {
             console.log("token = %s", win.token);
             win.stop();
-        };
-    } else {
-        if (!fs.existsSync(outDir)) {
-            throw "Cannot dump to " + outDir + " - path does not exist.";
-        }
-        if (!fs.statSync(outDir).isDirectory()) {
-            throw "Cannot dump to " + outDir + " - path is not a directory.";
-        }
-
-        dumps.forEach(function (d) {
-            // decide which dump-tasks to add...
-            if (d === 'products') {
-                makeProductsDump();
-            } else if (d === 'claims') {
-                makeClaimsDump();
-            } else if (d === 'vocs') {
-                makeVocDump();
-//            } else if (d === 'stats') {
-//                makeStatsDump();
-            } else if (d === 'samples') {
-                makeSampleIdsDump();
-            } else if (!isNaN(Number(d))) {
-                makeSingleIdDump(d);
-            }
         });
+        return; // if we request a token, do nothing else!
+    } //else
+
+    if (!fs.existsSync(outDir)) {
+        throw "Cannot dump to " + outDir + " - path does not exist.";
+    }
+    if (!fs.statSync(outDir).isDirectory()) {
+        throw "Cannot dump to " + outDir + " - path is not a directory.";
     }
 
-    win.start(handler);
+    win.start(function () {
+        loadReferences(function () {
+            assembleWork();
+            doWork(function () {win.stop(); });
+        });
+    });
 }
 
 doDump();
