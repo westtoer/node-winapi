@@ -30,8 +30,31 @@ describe('vocs-query build & fetch', function () {
         win.stop();
     });
 
-    it('should allow to filter for specific vocabulary-name');
-    // in doubth if we really need it: the total voc xml is small enough to retrieve as a whole and parse and split locally
+    it('should allow to filter for specific vocabulary-name', function (done) {
+        var names = ['publicatiekanalen', 'product_types'],
+            q = query.clone().asJSON_HAL().vocname(names).size(names.length);
+
+        win.fetch(q, function (err, obj, meta) {
+            assert.equal(meta.total, names.length, "resultset-size should match the requested vocnames");
+            assert.equal(obj.length, names.length, "actual retrieved set-size should match the requested vocnames");
+
+            var vocCodes = win.parseVocabularyCodes(obj), vocTrees = win.parseVocabularyTrees(obj);
+            assert.isNotNull(vocCodes, 'parsed vocab codes should not be null');
+            assert.isNotNull(vocTrees, 'parsed vocab trees should not be null');
+            assert.equal(Object.keys(vocCodes).length, names.length, "number of vocabs don't match length of parsed code-lists");
+            assert.equal(Object.keys(vocTrees).length, names.length, "number of vocabs don't match length of parsed trees");
+            names.forEach(function (k) {
+                var vocCode = vocCodes[k], vocTree = vocTrees[k];
+                assert.ok(Array.isArray(vocCode), "voc for name " + k + " is not an array");
+                if (['culturefeed_event_type', 'publicatiekanalen', 'product_types'].indexOf(k) === -1) {
+                    assert.isNull(vocTree, "flat list should be no hierarchies for voc = " + k);
+                } else {
+                    assert.isAbove(vocCode.length, vocTree.length, "hierachies should have less top level nodes for voc = " + k);
+                }
+            });
+            done();
+        });
+    });
 
 
     it('should allow bulk retrieval', function (done) {
@@ -77,9 +100,10 @@ describe('vocs-query build & fetch', function () {
             Object.keys(vocCodes).forEach(function (k) {
                 var vocCode = vocCodes[k], vocTree = vocTrees[k];
                 assert.ok(Array.isArray(vocCode), "voc for name " + k + " is not an array");
-                if (['culturefeed_event_type', 'publicatiekanalen', 'product_types'].indexOf(k) === -1) {
-                    assert.equal(vocCode.length, vocTree.length, "flat list should be no hierarchies for voc = " + k);
+                if (['publicatiekanalen', 'product_types'].indexOf(k) === -1) {
+                    assert.isNull(vocTree, "flat list should be no hierarchies for voc = " + k);
                 } else {
+                    assert.isNotNull(vocTree, "hierarchy should exist for voc = " + k);
                     assert.isAbove(vocCode.length, vocTree.length, "hierachies should have less top level nodes for voc = " + k);
                 }
             });
@@ -92,6 +116,7 @@ describe('vocs-query build & fetch', function () {
         win.fetch(q, function (err, bulk) {
             var vocCodes = win.parseVocabularyCodes(bulk, names), vocTrees = win.parseVocabularyTrees(bulk, names);
             //dumpTree("", vocTrees.publicatiekanalen);
+            //dumpTree("", vocTrees.product_types);
             //console.log(vocCodes.product_types.sort());
             assert.isNotNull(vocCodes, 'parsed vocab codes should not be null');
             assert.isNotNull(vocTrees, 'parsed vocab trees should not be null');
@@ -100,9 +125,10 @@ describe('vocs-query build & fetch', function () {
             names.forEach(function (k) {
                 var vocCode = vocCodes[k], vocTree = vocTrees[k];
                 assert.ok(Array.isArray(vocCode), "voc for name " + k + " is not an array");
-                if (['culturefeed_event_type', 'publicatiekanalen', 'product_types'].indexOf(k) === -1) {
-                    assert.equal(vocCode.length, vocTree.length, "flat list should be no hierarchies for voc = " + k);
+                if (['publicatiekanalen', 'product_types'].indexOf(k) === -1) {
+                    assert.isNull(vocTree, "flat list should be no hierarchies for voc = " + k);
                 } else {
+                    assert.isNotNull(vocTree, "hierarchy should exist for voc = " + k);
                     assert.isAbove(vocCode.length, vocTree.length, "hierachies should have less top level nodes for voc = " + k);
                 }
             });
