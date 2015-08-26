@@ -17,6 +17,8 @@ var wapi = require('./lib/winapi'),
     outDir,
     dumps,
     work = [],
+    maxopen,
+    first_ts,
     done = {report: [], count: { xml: 0, json: 0}},
     timeinc,
     FORMATS = {xml: "asXML", json: "asJSON"},
@@ -73,9 +75,13 @@ settings = argv
     .alias('p', 'progress')
     .default('p', false)
 
-    .describe('timebetween', 'wait this many millis between requests')
+    .describe('timebetween', 'wait this many millis between progressing to next task')
     .alias('t', 'timebetween')
-    .default('t', 100)  //10 requests per second
+    .default('t', 100)  //10 tasks (20 requests) per second
+
+    .describe('maxopen', 'control not having more then this many open connections - wait starting new ones')
+    .alias('m', 'maxopen')
+    .default('m', 40)  //40 simultaneous requests
 
     .demand(['secret', 'output'])
 
@@ -84,8 +90,8 @@ settings = argv
 win = wapi.client({secret: settings.secret, clientid: settings.clientid, verbose: settings.verbose});
 outDir = settings.output;
 timeinc = settings.timebetween;
-dumps = settings._ && settings._.length ? settings._ : ['products', 'vocs', 'samples'];
-
+maxopen = settings.maxopen;
+dumps = settings._ && settings._.length ? settings._ : ['vocs', 'samples', 'products'];
 
 function contains(arr, item) {
     return (arr.indexOf(item) >= 0);
@@ -101,15 +107,17 @@ function nameJoin() {
 
 
 function reportDone(ext, task, status, uri, ts_start, open_start, size, mime) {
-    var ts_end = moment(), open_end, duration;
+    var ts_end = moment(), open_end, duration, elapse;
 
     done.count[ext] += 1;
     work.open -= 1;
 
     open_end = work.open;
     duration = ts_end.diff(ts_start);
+    elapse = ts_start.diff(first_ts);
 
     done.report.push([
+        elapse,
         ts_start.toISOString(),
         ts_end.toISOString(),
         duration,
@@ -126,8 +134,8 @@ function reportDone(ext, task, status, uri, ts_start, open_start, size, mime) {
     ]);
     
     if (settings.progress) {
-        console.log("done xml %d - json %d off %d \t- open connections == %d > %d \t- size %d \t- mime = %s",
-                    done.count.xml, done.count.json, work.length, open_start, open_end, size, mime);
+        console.log("done %s #%d/%d \t|started @ %d ms\t|open connections then: %d > now: %d\t|size = %d\t|mime = %s",
+                    ext, done.count[ext], work.length, elapse, open_start, open_end, size, mime);
     }
 
     if (done.count.xml === work.length && done.count.xml === done.count.json) {
@@ -135,7 +143,7 @@ function reportDone(ext, task, status, uri, ts_start, open_start, size, mime) {
             path.join(outDir, "dhubdump-report.csv"),
             done.report,
             [
-                "ts_start", "ts_end", "duration (ms)", "dir", "name", "types", " touristic_types", "channels",
+                "elapse (ms)", "ts_start", "ts_end", "duration (ms)", "dir", "name", "types", " touristic_types", "channels",
                 "lastmod GTE", "softDelState", "pubState", "status", "uri",
                 "open on start", "open on close", "content-length", "content-type"
             ]
@@ -180,6 +188,7 @@ function perform(task) {
         open = work.open;
 
         work.open += 1;
+        if (first_ts === undefined) { first_ts = ts; }
         win.stream(qbf, sink, function (res) {
             if (status === undefined) {
                 //wait for completion to be able to size the file.
@@ -251,9 +260,11 @@ function makeChannelTasks(pTask) {
         addTask(task);
         Object.keys(PERIODS).forEach(makePeriodTasks(task));
 
+
         //simplify name downwards -
-        task.name = nameJoin(pTask.name, channel);
-        TOURTYPES.forEach(makeTourTypeTasks(task));
+        //TODO --> piep-principle -- removing these -- too much extra work
+        // task.name = nameJoin(pTask.name, channel);
+        // TOURTYPES.forEach(makeTourTypeTasks(task));
     };
 }
 
@@ -324,38 +335,61 @@ function makeProductsDump() {
         query: wapi.query('product')
     };
 
-    // vocabulary lists
-    // TODO --> but how do we know all vocabularies? for now, just hardcode (based omn shmdoc listings)
-
-    //subtasks per products
-    PRODUCTS.forEach(makeProductTasks(task));
-
-    //subtasks per channel
-    CHANNELS.forEach(makeChannelTasks(task));
-
     //subtask for all channels together
     task.name = "allchannels";
     task.query = task.query.clone().forTypes(PRODUCTS);
     TOURTYPES.forEach(makeTourTypeTasks(task));
+
+    task.name = "";
+    //subtasks per channel
+    CHANNELS.forEach(makeChannelTasks(task));
+
+    //subtasks per products
+    PRODUCTS.forEach(makeProductTasks(task));
 }
 
 function loadReferences(done) {
-    var channels, types;
+    var query = wapi.query('vocabulary').bulk().asJSON(),
+        LANGMATCH = new RegExp("(.*)_nl");
+
+    function leafNodes(lvl, res) {
+        res = res || [];
+
+        lvl.forEach(function (node) {
+            if (node.hasOwnProperty("children") && node.children.length > 0) {
+                leafNodes(node.children, res);
+            } else {
+                res.push(node.code);
+            }
+        });
+
+        return res;
+    }
 
     function getChannels(cb) {
-
-        //TODO perform logic to get list of channels from vocabulary
-        // channels voc is a hierarchy but we want group levels as well --> we assume .* will work --> warn if not
-        setImmediate(function () {
+        var q = query.clone().vocname('publicatiekanalen');
+        win.fetch(q, function (err, obj) {
+            var trees = win.parseVocabularyTrees(obj),
+                list = leafNodes(trees.publicatiekanalen); // only retain low level children
+            list = list.reduce(function (extended, item) {
+                var m = LANGMATCH.exec(item);
+                if (m !== null) {
+                    extended.push(m[1]); //add .* variant for whenever a match is found for language-vraiants (match _nl --> add chunked off variant to
+                }
+                extended.push(item);
+                return extended;
+            }, []);
+            CHANNELS = list;
             cb(null, "");
         });
     }
 
     function getTypes(cb) {
-
-        //TODO perform logic to get list of low-level-types from vocabulary
-        // tourtypes voc is a hierachy but we only want lowest levels
-        setImmediate(function () {
+        var q = query.clone().vocname('product_types');
+        win.fetch(q, function (err, obj) {
+            var trees = win.parseVocabularyTrees(obj),
+                list = leafNodes(trees.product_types); // only retain low level children
+            TOURTYPES = list;
             cb(null, "");
         });
     }
@@ -369,16 +403,16 @@ function loadReferences(done) {
 function assembleWork() {
     dumps.forEach(function (d) {
         // decide which dump-tasks to add...
-        if (d === 'products') {
-            makeProductsDump();
-        } else if (d === 'claims') {
-            makeClaimsDump();
-        } else if (d === 'vocs') {
+        if (d === 'vocs') {
             makeVocDump();
-//            } else if (d === 'stats') {
-//                makeStatsDump();
         } else if (d === 'samples') {
             makeSampleIdsDump();
+        } else if (d === 'claims') {
+            makeClaimsDump();
+        } else if (d === 'products') {
+            makeProductsDump();
+//            } else if (d === 'stats') {
+//                makeStatsDump();
         } else if (!isNaN(Number(d))) {
             makeSingleIdDump(d);
         }
@@ -390,9 +424,10 @@ function doWork(done) {
     work.open = 0;
     function doNext() {
         if (cnt < work.length) {
-            // process next
-            perform(work[cnt]);
-            cnt += 1;
+            if (work.open < maxopen - 1) { // process next
+                perform(work[cnt]);
+                cnt += 1;
+            }
             setTimeout(doNext, timeinc);
         } else {
             done();

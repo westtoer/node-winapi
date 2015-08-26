@@ -31,7 +31,7 @@ nodejs dhubdump.js -o ~/feeds/WIN/2.0/ -i <<yourid>> -s <<yoursecret>>
 
 is equivalent to:
 ```
-nodejs dhubdump.js -o ~/feeds/WIN/2.0/ -i <<yourid>> -s <<yoursecret>> products vocs samples
+nodejs dhubdump.js -o ~/feeds/WIN/2.0/ -i <<yourid>> -s <<yoursecret>> vocs samples products
 ```
 
 meaning that it will combine those 3 dumps in one run.
@@ -54,10 +54,6 @@ The created dump files are named and organized as such:
     <<channel>>/
         <<channel>>.<<format>>
         <<channel>>-all-<<period-to-from>>.<<format>>
-        bytourtype/
-          <<channel>>-<<tourtype>>.<<format>>
-          <<channel>>-<<tourtype>>-<<period-from>>.<<format>>
-        
   bytourtype/
     allchannels-<<tourtype>>.<<format>>
     allchannels-<<period-from>>.<<format>>
@@ -155,11 +151,16 @@ In the current state this leads to errors emitted during the run that look like 
 error reading uri [http://api.westtoer.tdms.acc.saga.be/api/v1/temporary_offering/?format=xml&access_token=***&size=9750] to stream - response.status == 500
 ```
 
+The status could equally be 
+* any other 50x - the 502 typically indicating the problem is rather at some intermediate proxy.
+* or even more bare-bones netwerking issues (connectivity, dns resolution issues, ...)
+
+
 If you didn't run the process yourself, but are just given access to the produced files, you should be able to grab the ```dhubdump-report.csv```.  That file lists the files it tried to produce, the query settings, the URI called and the status of that attempt.
 
 Since producing this report is the last action of the dump-process its timestamp will tell you 
 - when the dump-process last completed
-- and in the odd occasion that it is smaller then that of the produced files: that a dump is currently in progress, or was killed prematurely.
+- and in the odd occasion that it is smaller then that of the produced files: that a dump is currently in progress, or was killed prematurely (without being able to write the report, and thus update its lastmod-ts)
 
 
 ### Correctness Limitation
