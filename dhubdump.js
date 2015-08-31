@@ -355,13 +355,15 @@ function loadReferences(done) {
     function leafNodes(lvl, res) {
         res = res || [];
 
-        lvl.forEach(function (node) {
-            if (node.hasOwnProperty("children") && node.children.length > 0) {
-                leafNodes(node.children, res);
-            } else {
-                res.push(node.code);
-            }
-        });
+        if (lvl !== undefined && lvl !== null && lvl.length !== 0) {
+            lvl.forEach(function (node) {
+                if (node.hasOwnProperty("children") && node.children.length > 0) {
+                    leafNodes(node.children, res);
+                } else {
+                    res.push(node.code);
+                }
+            });
+        }
 
         return res;
     }
