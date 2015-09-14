@@ -11,7 +11,7 @@ var chai = require('chai'),
     fs = require('fs'),
     moment = require('moment'),
 
-    PRODUCTS = ['accommodation', 'permanent_offering', 'reca', 'temporary_offering', 'meetingroom'],
+    PRODUCTS = ['accommodation', 'permanent_offering', 'reca', 'temporary_offering', 'mice'],
     CHANNELS = ["westtoer.*", "brugse_ommeland.*", "westhoek.*", "de_kust.*", "leiestreek.*", "fietsen_en_wandelen.*",
                 "kenniscentrum.*", "dagtrips_voor_groepen.*", "flanders_fields.*", "meetingkust.*", "autoroutes.*",
                 "itrip_coast.*", "kustwandelroute.*", "west-vlinderen.*", "300_jaar_grens.*"],
