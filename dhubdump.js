@@ -25,10 +25,7 @@ var wapi = require('./lib/winapi'),
     PERIODS = {week: 7, day: 1},
     PUBSTATES = {all: "ignorePublished", pub: "published" },
 
-    //TODO there should be a dynamic way to retrieve these lists
-    PRODUCTS = ['accommodation', 'permanent_offering', 'reca', 'temporary_offering', 'meetingroom'],
-    // TODO when channels are automatic --> try to recognise that lang-variants can be grouped into one!
-    // --> just match for _nl , then add also the variant without _nl
+    PRODUCTS = ['accommodation', 'permanent_offering', 'reca', 'temporary_offering', 'mice'],
     CHANNELS = ['westtoer', 'fietsen_en_wandelen', 'kenniscentrum', 'dagtrips_voor_groepen',
                 'flanders_fields', 'flanders_fields_nl', 'flanders_fields_fr', 'flanders_fields_en', 'flanders_fields_de',
                 'leiestreek', 'leiestreek_nl', 'leiestreek_fr', 'leiestreek_en', 'leiestreek_de',
@@ -352,6 +349,10 @@ function loadReferences(done) {
     var query = wapi.query('vocabulary').bulk().asJSON(),
         LANGMATCH = new RegExp("(.*)_nl");
 
+    function rootNodes(lvl) {
+        return lvl.map(function (node) { return node.code; });
+    }
+
     function leafNodes(lvl, res) {
         res = res || [];
 
@@ -367,6 +368,7 @@ function loadReferences(done) {
 
         return res;
     }
+
 
     function getChannels(cb) {
         var q = query.clone().vocname('publicatiekanalen');
@@ -396,7 +398,17 @@ function loadReferences(done) {
         });
     }
 
-    async.parallel([getChannels, getTypes], function (err, result) {
+    function getProductClasses(cb) {
+        var q = query.clone().vocname('product_types');
+        win.fetch(q, function (err, obj) {
+            var trees = win.parseVocabularyTrees(obj),
+                list = rootNodes(trees.product_types); // only retain top level children
+            PRODUCTS = list;
+            cb(null, "");
+        });
+    }
+
+    async.parallel([getChannels, getTypes, getProductClasses], function (err, result) {
         done();
     });
     return;
