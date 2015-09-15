@@ -68,7 +68,7 @@ key             | possibe values     | meaning
     | permanent_offering |   POI and attractions
     | reca               |   places to eat and drink
     | temporary_offering |   events 
-    | meetingroom        |   mice info
+    | mice               |   mice info
  ```<<pubstate>>```     |all, pub| publication states of the items in the dump
     | all                |   all items, ignoring their published state
     | pub                |   only items in the published state
