@@ -6,7 +6,7 @@
     "type": "git",
     "url": "git@github.com:westtoer/node-winapi.git"
   },
-  "main": "test.js",
+  "main": "lib/winapi.js",
   "scripts": {
     "test": "mocha test/*js"
   },
