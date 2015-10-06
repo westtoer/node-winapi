@@ -61,6 +61,9 @@ settings = argv
     .describe('secret', 'het secret.')
     .alias('s', 'secret')
 
+    .describe('server', 'Server to talk to (hostname or IP)')
+    .alias('S', 'server')
+
     .describe('output', 'folder waar de dump wordt geplaatst.')
     .alias('o', 'output')
 
@@ -84,7 +87,7 @@ settings = argv
 
     .argv;
 
-win = wapi.client({secret: settings.secret, clientid: settings.clientid, verbose: settings.verbose});
+win = wapi.client({secret: settings.secret, clientid: settings.clientid, verbose: settings.verbose, server: settings.server});
 outDir = settings.output;
 timeinc = settings.timebetween;
 maxopen = settings.maxopen;
