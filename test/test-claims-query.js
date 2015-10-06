@@ -17,7 +17,7 @@ var chai = require('chai'),
 
 
 describe('claims-query build & fetch', function () {
-    var query = wapi.query('claim').requireFields(["claims.claim.owner.email_address", "partner_id"]);
+    var query = wapi.query('claim').requireFields(["claims.claim.owner.email_address", "metadata.partner_id"]);
 
     before(function (done) {
         this.timeout(5000);

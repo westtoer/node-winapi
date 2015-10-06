@@ -278,7 +278,7 @@ function makeClaimsDump() {
     var task = {
         dir: ".",
         name: "claims",
-        query: wapi.query('claim').requireFields(["claims.claim.owner.email_address", "partner_id"])
+        query: wapi.query('claim').requireFields(["claims.claim.owner.email_address", "metadata.partner_id"])
     };
 
     addTask(task);
