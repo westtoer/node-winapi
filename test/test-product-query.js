@@ -296,7 +296,7 @@ describe('product-query build & fetch', function () {
     });
 
     it('should allow bulk retrieval', function (done) {
-        this.timeout(60000);
+        this.timeout(100000);
         var q = query.clone().asJSON_HAL().forTypes(PRODUCTS);
 
         win.fetch(q.clone(), check("prebulk_json_probesize", true, function (resp, meta) {

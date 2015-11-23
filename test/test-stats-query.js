@@ -10,6 +10,7 @@ var chai = require('chai'),
     path = require('path'),
     fs = require('fs'),
     moment = require('moment'),
+    async = require('async'),
 
     settings = require('./client-settings.json'),
     wapi = require('../lib/winapi'),
@@ -17,7 +18,9 @@ var chai = require('chai'),
 
 
 describe('stats-query build & fetch', function () {
-    var query = wapi.query('statistics');
+    var query = wapi.query('statistics'),
+        currentyear = moment().year(),
+        years = Array.apply(null, {length: 5}).map(function (no, i) {return (currentyear - 1 - i); });
 
     before(function (done) {
         this.timeout(5000);
@@ -31,10 +34,27 @@ describe('stats-query build & fetch', function () {
         win.stop();
     });
 
-    it('should allow to retrieve last 5 years of data');
+    it('should allow to retrieve last 5 years of data', function (done) {
+        var q = query.clone().asJSON_HAL();
+
+        function fetchYear(year, ycb) {
+            var yq = q.clone().statsyear(year);
+            win.fetch(yq, function (err, resp, meta) {
+                assert.isNull(err, "error retrieving stats size for year " + year + ": " + err);
+                var total = meta.total;
+                assert.isAbove(total, 0, "zero-length of stats in bulk for year " + year);
+                ycb(null, {"year": year, "count": total});
+            });
+        }
+        async.map(years, fetchYear, function (err, res) {
+            assert.isNull(err, "error retrieving stats " + err);
+            console.log(res);
+            done();
+        });
+    });
 
     it('should allow bulk retrieval', function (done) {
-        this.timeout(30000);
+        this.timeout(60000);
         var q = query.clone().asJSON_HAL();
 
         win.fetch(q.clone(), function (err, resp, meta) {

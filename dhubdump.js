@@ -281,7 +281,17 @@ function makeClaimsDump() {
     var task = {
         dir: ".",
         name: "claims",
-        query: wapi.query('claim').requireFields(["claims.claim.owner.email_address", "metadata.partner_id"])
+        query: wapi.query('claim').requireFields(["claims.claim.owner.email_address"])
+    };
+
+    addTask(task);
+}
+
+function makeStatsDump() {
+    var task = {
+        dir: ".",
+        name: "stats",
+        query: wapi.query('statistics')
     };
 
     addTask(task);
@@ -428,8 +438,8 @@ function assembleWork() {
             makeClaimsDump();
         } else if (d === 'products') {
             makeProductsDump();
-//            } else if (d === 'stats') {
-//                makeStatsDump();
+        } else if (d === 'stats') {
+            makeStatsDump();
         } else if (!isNaN(Number(d))) {
             makeSingleIdDump(d);
         }
