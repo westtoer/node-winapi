@@ -20,6 +20,7 @@ var wapi = require('./lib/winapi'),
     maxopen,
     first_ts,
     done = {report: [], count: { xml: 0, json: 0}},
+    reportcsv,
     timeinc,
     FORMATS = {xml: "asXML", json: "asJSON"},
     PERIODS = {week: 7, day: 1},
@@ -67,6 +68,10 @@ settings = argv
     .describe('output', 'folder waar de dump wordt geplaatst.')
     .alias('o', 'output')
 
+    .describe('report', 'naam van de report.csv')
+    .alias('r', 'report')
+    .default('r', 'dhubdump-report')
+
     .describe('verbose', 'should there be a lot of logging output')
     .alias('v', 'verbose')
     .default('v', false)
@@ -92,6 +97,7 @@ outDir = settings.output;
 timeinc = settings.timebetween;
 maxopen = settings.maxopen;
 dumps = settings._ && settings._.length ? settings._ : ['vocs', 'samples', 'products'];
+reportcsv = settings.report + ".csv";
 
 function contains(arr, item) {
     return (arr.indexOf(item) >= 0);
@@ -140,7 +146,7 @@ function reportDone(ext, task, status, uri, ts_start, open_start, size, mime) {
 
     if (done.count.xml === work.length && done.count.xml === done.count.json) {
         rwcsv.write(
-            path.join(outDir, "dhubdump-report.csv"),
+            path.join(outDir, reportcsv),
             done.report,
             [
                 "elapse (ms)", "ts_start", "ts_end", "duration (ms)", "dir", "name", "types", " touristic_types", "channels",
@@ -387,17 +393,21 @@ function loadReferences(done) {
     function getChannels(cb) {
         var q = query.clone().vocname('publicatiekanalen');
         win.fetch(q, function (err, obj) {
-            var trees = win.parseVocabularyTrees(obj),
-                list = leafNodes(trees.publicatiekanalen); // only retain low level children
-            list = list.reduce(function (extended, item) {
-                var m = LANGMATCH.exec(item);
-                if (m !== null) {
-                    extended.push(m[1]); //add .* variant for whenever a match is found for language-vraiants (match _nl --> add chunked off variant to
-                }
-                extended.push(item);
-                return extended;
-            }, []);
-            CHANNELS = list;
+            try {
+                var trees = win.parseVocabularyTrees(obj),
+                    list = leafNodes(trees.publicatiekanalen); // only retain low level children
+                list = list.reduce(function (extended, item) {
+                    var m = LANGMATCH.exec(item);
+                    if (m !== null) {
+                        extended.push(m[1]); //add .* variant for whenever a match is found for language-vraiants (match _nl --> add chunked off variant to
+                    }
+                    extended.push(item);
+                    return extended;
+                }, []);
+                CHANNELS = list;
+            } catch (e) {
+                console.error("ERROR Retrieving 'channels' dynamically - fallback to hardcoded...");
+            }
             cb(null, "");
         });
     }
@@ -405,9 +415,13 @@ function loadReferences(done) {
     function getTypes(cb) {
         var q = query.clone().vocname('product_types');
         win.fetch(q, function (err, obj) {
-            var trees = win.parseVocabularyTrees(obj),
-                list = leafNodes(trees.product_types); // only retain low level children
-            TOURTYPES = list;
+            try {
+                var trees = win.parseVocabularyTrees(obj),
+                    list = leafNodes(trees.product_types); // only retain low level children
+                TOURTYPES = list;
+            } catch (e) {
+                console.error("ERROR Retrieving 'tourtypes (leafs)' dynamically - fallback to hardcoded...");
+            }
             cb(null, "");
         });
     }
@@ -415,9 +429,13 @@ function loadReferences(done) {
     function getProductClasses(cb) {
         var q = query.clone().vocname('product_types');
         win.fetch(q, function (err, obj) {
-            var trees = win.parseVocabularyTrees(obj),
-                list = rootNodes(trees.product_types); // only retain top level children
-            PRODUCTS = list;
+            try {
+                var trees = win.parseVocabularyTrees(obj),
+                    list = rootNodes(trees.product_types); // only retain top level children
+                PRODUCTS = list;
+            } catch (e) {
+                console.error("ERROR Retrieving 'producttypes (roots)' dynamically - fallback to hardcoded...");
+            }
             cb(null, "");
         });
     }
