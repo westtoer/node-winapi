@@ -22,6 +22,8 @@ var wapi = require('./lib/winapi'),
     done = {report: [], count: { xml: 0, json: 0}},
     reportcsv,
     timeinc,
+    include_intermediates_in_tourtypes = false,
+
     FORMATS = {xml: "asXML", json: "asJSON"},
     PERIODS = {week: 7, day: 1},
     PUBSTATES = {all: "ignorePublished", pub: "published" },
@@ -373,14 +375,19 @@ function loadReferences(done) {
         return lvl.map(function (node) { return node.code; });
     }
 
-    function leafNodes(lvl, res) {
+    function leafNodes(lvl, res, intermediates, depth) {
+        depth = depth || 0;
         res = res || [];
+        intermediates = intermediates || false;
+        var isleaf = true;
 
         if (lvl !== undefined && lvl !== null && lvl.length !== 0) {
             lvl.forEach(function (node) {
                 if (node.hasOwnProperty("children") && node.children.length > 0) {
-                    leafNodes(node.children, res);
-                } else {
+                    leafNodes(node.children, res, intermediates, depth + 1);
+                    isleaf = false;
+                }
+                if (isleaf || (intermediates && depth > 0)) {
                     res.push(node.code);
                 }
             });
@@ -388,7 +395,6 @@ function loadReferences(done) {
 
         return res;
     }
-
 
     function getChannels(cb) {
         var q = query.clone().vocname('publicatiekanalen');
@@ -417,7 +423,9 @@ function loadReferences(done) {
         win.fetch(q, function (err, obj) {
             try {
                 var trees = win.parseVocabularyTrees(obj),
-                    list = leafNodes(trees.product_types); // only retain low level children
+                    // last param == false ==> only retain lowest level children (that themselves have no children)
+                    // last param == true  ==> retain all but root levels that have children
+                    list = leafNodes(trees.product_types, [], include_intermediates_in_tourtypes);
                 TOURTYPES = list;
             } catch (e) {
                 console.error("ERROR Retrieving 'tourtypes (leafs)' dynamically - fallback to hardcoded...");
