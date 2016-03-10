@@ -379,16 +379,18 @@ function loadReferences(done) {
         depth = depth || 0;
         res = res || [];
         intermediates = intermediates || false;
-        var isleaf = true;
 
         if (lvl !== undefined && lvl !== null && lvl.length !== 0) {
             lvl.forEach(function (node) {
+                var isleaf = true;
                 if (node.hasOwnProperty("children") && node.children.length > 0) {
                     leafNodes(node.children, res, intermediates, depth + 1);
                     isleaf = false;
                 }
                 if (isleaf || (intermediates && depth > 0)) {
                     res.push(node.code);
+                } else if (settings.verbose) {
+                    console.log("skipping node %s - %d", node.code, node.children.length);
                 }
             });
         }
@@ -423,10 +425,13 @@ function loadReferences(done) {
         win.fetch(q, function (err, obj) {
             try {
                 var trees = win.parseVocabularyTrees(obj),
+                    list = leafNodes(trees.product_types, [], include_intermediates_in_tourtypes);
                     // last param == false ==> only retain lowest level children (that themselves have no children)
                     // last param == true  ==> retain all but root levels that have children
-                    list = leafNodes(trees.product_types, [], include_intermediates_in_tourtypes);
                 TOURTYPES = list;
+                if (settings.verbose) {
+                    console.log("list of leaf (include intermediates = %s) tour types == %j", include_intermediates_in_tourtypes, TOURTYPES);
+                }
             } catch (e) {
                 console.error("ERROR Retrieving 'tourtypes (leafs)' dynamically - fallback to hardcoded...");
             }
@@ -441,6 +446,9 @@ function loadReferences(done) {
                 var trees = win.parseVocabularyTrees(obj),
                     list = rootNodes(trees.product_types); // only retain top level children
                 PRODUCTS = list;
+                if (settings.verbose) {
+                    console.log("list of root product types == %j", PRODUCTS);
+                }
             } catch (e) {
                 console.error("ERROR Retrieving 'producttypes (roots)' dynamically - fallback to hardcoded...");
             }
