@@ -73,7 +73,7 @@ describe('claims-query build & fetch', function () {
             sink = fs.createWriteStream(path.join("tmp", "claims-1-10.xml"));
         assert.equal(q.requiredFields.length, 2);
 
-        win.stream(q.clone(), sink, function (res) {
+        win.stream(q.clone(), sink, function (err, res) {
             res
                 .on('end', done)
                 .on('error', function (e) {

@@ -78,7 +78,7 @@ describe('stats-query build & fetch', function () {
         var q = query.clone().size(10).asXML(),
             sink = fs.createWriteStream(path.join("tmp", "stats-1-10.xml"));
 
-        win.stream(q.clone(), sink, function (res) {
+        win.stream(q.clone(), sink, function (err, res) {
             res
                 .on('end', done)
                 .on('error', function (e) {

@@ -197,7 +197,10 @@ function perform(task) {
 
         work.open += 1;
         if (first_ts === undefined) { first_ts = ts; }
-        win.stream(qbf, sink, function (res) {
+        win.stream(qbf, sink, function (err, res) {
+            if (err) {
+                status += "\ncallback Error: " + err;
+            }
             if (status === undefined) {
                 //wait for completion to be able to size the file.
                 //this because apparently there is no content-length header
