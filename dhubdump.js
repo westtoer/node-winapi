@@ -21,6 +21,7 @@ var wapi = require('./lib/winapi'),
     first_ts,
     done = {report: [], count: { xml: 0, json: 0}},
     reportcsv,
+    claimsmode = false,
     timeinc,
     include_intermediates_in_tourtypes = false,
 
@@ -74,6 +75,7 @@ settings = argv
     .alias('r', 'report')
     .default('r', 'dhubdump-report')
 
+    .boolean('verbose')
     .describe('verbose', 'should there be a lot of logging output')
     .alias('v', 'verbose')
     .default('v', false)
@@ -90,6 +92,11 @@ settings = argv
     .alias('m', 'maxopen')
     .default('m', 40)  //40 simultaneous requests
 
+    .boolean('claimsmode')
+    .describe('claimsmode', 'performs id-lookups on the claims-api AND removes all filters on the claims dump')
+    .alias('C', 'claimsmode')
+    .default('C', false)  //40 simultaneous requests
+
     .demand(['secret', 'output'])
 
     .argv;
@@ -98,6 +105,7 @@ win = wapi.client({secret: settings.secret, clientid: settings.clientid, verbose
 outDir = settings.output;
 timeinc = settings.timebetween;
 maxopen = settings.maxopen;
+claimsmode = !!(settings.claimsmode);
 dumps = settings._ && settings._.length ? settings._ : ['vocs', 'samples', 'products'];
 reportcsv = settings.report + ".csv";
 
@@ -288,11 +296,15 @@ function makeProductTasks(pTask) {
     };
 }
 
-function makeClaimsDump() {
-    var task = {
+function makeClaimsDump(unfiltered) {
+    var task, q = wapi.query('claim');
+    if (!unfiltered) {
+        q = q.requireFields(["claims.claim.owner.email_address"]);
+    }
+    task = {
         dir: ".",
         name: "claims",
-        query: wapi.query('claim').requireFields(["claims.claim.owner.email_address"])
+        query: q
     };
 
     addTask(task);
@@ -327,11 +339,21 @@ function makeIdTask(pTask) {
     };
 }
 
+function makeSingleClaimDump(id) {
+    var task = {
+        dir: "claims",
+        name: "claim",
+        query: wapi.query('claim')
+    };
+    assertDirExists(path.join(outDir, task.dir));
+    makeIdTask(task)(id);
+}
+
 function makeSingleIdDump(id) {
     var task = {
         dir: "samples",
         name: "item",
-        query: wapi.query('product').forTypes(PRODUCTS).id(id)
+        query: wapi.query('product').forTypes(PRODUCTS)
     };
     assertDirExists(path.join(outDir, task.dir));
     makeIdTask(task)(id);
@@ -473,13 +495,17 @@ function assembleWork() {
         } else if (d === 'samples') {
             makeSampleIdsDump();
         } else if (d === 'claims') {
-            makeClaimsDump();
+            makeClaimsDump(claimsmode);
         } else if (d === 'products') {
             makeProductsDump();
         } else if (d === 'stats') {
             makeStatsDump();
         } else if (!isNaN(Number(d))) {
-            makeSingleIdDump(d);
+            if (claimsmode) {
+                makeSingleClaimDump(d);
+            } else {
+                makeSingleIdDump(d);
+            }
         }
     });
 }
