@@ -90,12 +90,12 @@ settings = argv
 
     .describe('maxopen', 'control not having more then this many open connections - wait starting new ones')
     .alias('m', 'maxopen')
-    .default('m', 40)  //40 simultaneous requests
+    .default('m', 5)  //5 simultaneous requests
 
     .boolean('claimsmode')
     .describe('claimsmode', 'performs id-lookups on the claims-api AND removes all filters on the claims dump')
     .alias('C', 'claimsmode')
-    .default('C', false)  //40 simultaneous requests
+    .default('C', false)
 
     .demand(['secret', 'output'])
 
