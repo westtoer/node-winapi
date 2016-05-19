@@ -365,4 +365,19 @@ describe('product-query build & fetch', function () {
             done();
         });
     });
+
+    it.only('should allow filtering for specific root type and municipality', function (done) {
+        var type = PRODUCTS[0],
+            city = "Bredene",
+            q = wapi.query().size(1).municipality(city).clone().forTypes(type).asJSON_HAL();
+
+        win.fetch(q, function (e, o, m) {
+            assert.isNull(e, "unexpected error during accomodation fetch for municipality");
+            assert.isAbove(o.length, 0, "no avaialble items to continue test");
+            var item = o[0], foundCity = item.location_info.address.municipality;
+
+            assert.equal(foundCity, city, "city doesn't match");
+            done();
+        });
+    });
 });

@@ -49,7 +49,8 @@ var wapi = require('./lib/winapi'),
              "scooter_solex_verhuur", "shopping", "shop_winkel", "speciale_markt", "speeltuin", "sportaccommodatie",
              "sportwedstrijd", "stoet", "stokerij", "strandclub", "tearoom", "tentoonstelling", "theater", "toeristische_dienst",
              "vakantiecentrum", "vakantielogies", "vakantiepark", "vakantiewoning", "verblijfpark", "vuurwerk", "wandelen",
-             "waterrecreatie", "wekelijkse_markt", "wellness", "wijngaard", "zaal", "zwemgelegenheid"];
+             "waterrecreatie", "wekelijkse_markt", "wellness", "wijngaard", "zaal", "zwemgelegenheid"],
+    CITIES = ["Koksijde", "Oostende", "Poperinge"];
 
 settings = argv
     .usage('Maakt een dump op basis van de win2 API.\nUsage: $0')
@@ -145,6 +146,7 @@ function reportDone(ext, task, status, uri, ts_start, open_start, size, mime) {
         task.query.lastmodRange ? task.query.lastmodRange.gte : "",
         task.query.softDelState,
         task.query.pubState,
+        task.query.selectMunicipal,
         status, uri,
         open_start, open_end, size, mime
     ]);
@@ -160,7 +162,8 @@ function reportDone(ext, task, status, uri, ts_start, open_start, size, mime) {
             done.report,
             [
                 "elapse (ms)", "ts_start", "ts_end", "duration (ms)", "dir", "name", "types", " touristic_types", "channels",
-                "lastmod GTE", "softDelState", "pubState", "status", "uri",
+                "lastmod GTE", "softDelState", "pubState", "municipality",
+                "status", "uri",
                 "open on start", "open on close", "content-length", "content-type"
             ]
         );
@@ -290,11 +293,26 @@ function makeChannelTasks(pTask) {
 function makeProductTasks(pTask) {
     return function (prod) {
         var task = {dir  : pTask.dir,
-                    name : prod,
+                    name : nameJoin(pTask.name, prod),
                     query: pTask.query.clone().forTypes(prod)};
         Object.keys(PUBSTATES).forEach(makePubTasks(task));
     };
 }
+
+
+function makeMunicipalityTasks(pTask) {
+    assertDirExists(path.join(outDir, pTask.dir, "bycity"));
+    return function (city) {
+        var dir  = path.join(pTask.dir, "bycity", city.toLowerCase()),
+            task = {dir  : dir,
+                    name : nameJoin(pTask.name, city.toLowerCase()),
+                    query: pTask.query.clone().municipality(city)};
+
+        assertDirExists(path.join(outDir, dir));
+        PRODUCTS.forEach(makeProductTasks(task));
+    };
+}
+
 
 function makeClaimsDump(unfiltered) {
     var task, q = wapi.query('claim');
@@ -385,6 +403,9 @@ function makeProductsDump() {
     TOURTYPES.forEach(makeTourTypeTasks(task));
 
     task.name = "";
+    //subtasks per city
+    CITIES.forEach(makeMunicipalityTasks(task));
+
     //subtasks per channel
     CHANNELS.forEach(makeChannelTasks(task));
 

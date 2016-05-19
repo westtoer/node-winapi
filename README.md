@@ -57,6 +57,10 @@ The created dump files are named and organized as such:
   bytourtype/
     allchannels-<<tourtype>>.<<format>>
     allchannels-<<period-from>>.<<format>>
+  bycity/
+    <<municipality>>/
+      <<municipality>>-<<type>>-all.<<format>>
+      <<municipality>>-<<type>>-<<pubstate>>.<<format>>
 ```
 
 In this structure the following value-replacements can occur:
@@ -80,6 +84,7 @@ key             | possibe values     | meaning
     | json               |   JavaScript Object Notation
  ```<<channel>>```      |...| publication-channel on which the contained items in the dump should be published
  ```<<tourtype>>```     |...| one of +80 distinct types from touristic classification (see taxonomy produced by the vocs dump)
+ ```<<municipality>>``` |...| the municipality on which the dataset is filtered
  
 The content of these files is descibed [here](https://goo.gl/0O1BWC)
 
