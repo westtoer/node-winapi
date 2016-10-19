@@ -50,7 +50,7 @@ var wapi = require('./lib/winapi'),
              "sportwedstrijd", "stoet", "stokerij", "strandclub", "tearoom", "tentoonstelling", "theater", "toeristische_dienst",
              "vakantiecentrum", "vakantielogies", "vakantiepark", "vakantiewoning", "verblijfpark", "vuurwerk", "wandelen",
              "waterrecreatie", "wekelijkse_markt", "wellness", "wijngaard", "zaal", "zwemgelegenheid"],
-    CITIES = ["Koksijde", "Oostende", "Poperinge"];
+    CITIES = ["Koksijde", "Oostende", "Poperinge", "Heuvelland"];
 
 settings = argv
     .usage('Maakt een dump op basis van de win2 API.\nUsage: $0')
