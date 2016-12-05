@@ -1,4 +1,4 @@
-/*jslint node: true */
+/*jslint node: true, stupid: true */
 /*jslint es5: true */
 /*jslint nomen: true */
 /*global setImmediate */
@@ -69,6 +69,9 @@ settings = argv
     .describe('server', 'Server to talk to (hostname or IP)')
     .alias('S', 'server')
 
+    .describe('protocol', 'Protocol to use http or https')
+    .alias('P', 'protocol')
+
     .describe('output', 'folder waar de dump wordt geplaatst.')
     .alias('o', 'output')
 
@@ -102,7 +105,7 @@ settings = argv
 
     .argv;
 
-win = wapi.client({secret: settings.secret, clientid: settings.clientid, verbose: settings.verbose, server: settings.server});
+win = wapi.client({secret: settings.secret, clientid: settings.clientid, verbose: settings.verbose, server: settings.server, protocol: settings.protocol});
 outDir = settings.output;
 timeinc = settings.timebetween;
 maxopen = settings.maxopen;
@@ -150,7 +153,7 @@ function reportDone(ext, task, status, uri, ts_start, open_start, size, mime) {
         status, uri,
         open_start, open_end, size, mime
     ]);
-    
+
     if (settings.progress) {
         console.log("done %s #%d/%d \t|started @ %d ms\t|open connections then: %d > now: %d\t|size = %d\t|mime = %s",
                     ext, done.count[ext], work.length, elapse, open_start, open_end, size, mime);
@@ -184,7 +187,7 @@ function size(fname) {
 }
 
 function perform(task) {
-    
+
     var q = task.query,
         pathname = path.join(outDir, task.dir, task.name);
 
@@ -223,7 +226,7 @@ function perform(task) {
             }
         });
     });
-    
+
 }
 
 function makePeriodTasks(pTask) {
@@ -259,8 +262,8 @@ function makeTourTypeTasks(pTask) {
     var dir  = path.join(pTask.dir, "bytourtype");
     assertDirExists(path.join(outDir, dir));
     return function (tourtype) {
-        var dir  = path.join(pTask.dir, "bytourtype"), //tourtype),
-            task = {dir  : dir,
+        var ldir  = path.join(pTask.dir, "bytourtype"), //tourtype),
+            task = {dir  : ldir,
                     name : nameJoin(pTask.name, tourtype),
                     query: pTask.query.clone().forTouristicTypes(tourtype)};
 
@@ -281,12 +284,6 @@ function makeChannelTasks(pTask) {
 
         addTask(task);
         Object.keys(PERIODS).forEach(makePeriodTasks(task));
-
-
-        //simplify name downwards -
-        //TODO --> piep-principle -- removing these -- too much extra work
-        // task.name = nameJoin(pTask.name, channel);
-        // TOURTYPES.forEach(makeTourTypeTasks(task));
     };
 }
 
@@ -447,6 +444,7 @@ function loadReferences(done) {
     function getChannels(cb) {
         var q = query.clone().vocname('publicatiekanalen');
         win.fetch(q, function (err, obj) {
+            /*jslint unparam:true*/
             try {
                 var trees = win.parseVocabularyTrees(obj),
                     list = leafNodes(trees.publicatiekanalen); // only retain low level children
@@ -469,6 +467,7 @@ function loadReferences(done) {
     function getTypes(cb) {
         var q = query.clone().vocname('product_types');
         win.fetch(q, function (err, obj) {
+            /*jslint unparam:true*/
             try {
                 var trees = win.parseVocabularyTrees(obj),
                     list = leafNodes(trees.product_types, [], include_intermediates_in_tourtypes);
@@ -488,6 +487,7 @@ function loadReferences(done) {
     function getProductClasses(cb) {
         var q = query.clone().vocname('product_types');
         win.fetch(q, function (err, obj) {
+            /*jslint unparam: true */
             try {
                 var trees = win.parseVocabularyTrees(obj),
                     list = rootNodes(trees.product_types); // only retain top level children
@@ -503,6 +503,7 @@ function loadReferences(done) {
     }
 
     async.parallel([getChannels, getTypes, getProductClasses], function (err, result) {
+        /*jslint unparam: true */
         done();
     });
     return;
