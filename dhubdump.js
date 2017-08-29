@@ -1,4 +1,4 @@
-/*jslint node: true, stupid: true */
+/*jslint node: true */
 /*jslint es5: true */
 /*jslint nomen: true */
 /*global setImmediate */
@@ -7,6 +7,7 @@
 
 var wapi = require('./lib/winapi'),
     rwcsv = require('./lib/rwcsv'),
+    jspage = require('./lib/jspage'),
     fs = require('graceful-fs'),
     path = require('path'),
     argv = require('yargs'),
@@ -24,6 +25,8 @@ var wapi = require('./lib/winapi'),
     claimsmode = false,
     timeinc,
     include_intermediates_in_tourtypes = false,
+    current_ts = "current", //moment().format("YYYYMMDDTHHmmss"),
+    pageLimits = {'json': -1, 'xml': -1},
 
     FORMATS = {xml: "asXML", json: "asJSON"},
     PERIODS = {week: 7, day: 1},
@@ -101,6 +104,10 @@ settings = argv
     .alias('C', 'claimsmode')
     .default('C', false)
 
+    .describe('jsonpage', 'force paging those sets that are bigger then jsonpage value')
+    .alias('j', 'jsonpage')
+    .default('j', -1)
+
     .demand(['secret', 'output'])
 
     .argv;
@@ -112,6 +119,8 @@ maxopen = settings.maxopen;
 claimsmode = !!(settings.claimsmode);
 dumps = settings._ && settings._.length ? settings._ : ['vocs', 'samples', 'products'];
 reportcsv = settings.report + ".csv";
+pageLimits.json = settings.jsonpage;
+//pageLimits.xml = settings.xmlpage; // not yet foreseen
 
 function contains(arr, item) {
     return (arr.indexOf(item) >= 0);
@@ -186,6 +195,20 @@ function size(fname) {
     return fs.statSync(fname).size;
 }
 
+function jsonSplit(size, pathname, fname) {
+    console.log("todo - split json files for %s", fname);
+}
+
+function splitPages(ext, pathname, fname) {
+    if (ext === "xml") {
+        return; // not supported yet
+    }
+    
+    if (ext === "json" && pageLimits.json > 0) {
+        jsonSplit(pageLimits.json, pathname, fname);
+    }
+}
+
 function perform(task) {
 
     var q = task.query,
@@ -220,6 +243,7 @@ function perform(task) {
                 //this because apparently there is no content-length header
                 res.on('end', function () {
                     reportDone(ext, task, "ok", uri, ts, open, size(fname), res.headers['content-type']);
+                    splitPages(ext, pathname, fname);
                 });
             } else {
                 reportDone(ext, task, status, uri, ts, open, -1, "");
@@ -235,7 +259,7 @@ function makePeriodTasks(pTask) {
         var days = PERIODS[period],
             from = to.clone().subtract(days, 'days'),
             task = {dir  : pTask.dir,
-                    name : nameJoin(pTask.name, period, from.format('YYYYMMDD'), 'current'),
+                    name : nameJoin(pTask.name, period, from.format('YYYYMMDD'), current_ts),
                     query: pTask.query.clone().lastmodBetween(from, null)};
         addTask(task);
     };
@@ -473,12 +497,16 @@ function loadReferences(done) {
                     list = leafNodes(trees.product_types, [], include_intermediates_in_tourtypes);
                     // last param == false ==> only retain lowest level children (that themselves have no children)
                     // last param == true  ==> retain all but root levels that have children
+                if (list.length === 0) {
+                    throw new Error('list op types cannot be empty - throwing error to force fallback');
+                }
                 TOURTYPES = list;
                 if (settings.verbose) {
                     console.log("list of leaf (include intermediates = %s) tour types == %j", include_intermediates_in_tourtypes, TOURTYPES);
                 }
             } catch (e) {
                 console.error("ERROR Retrieving 'tourtypes (leafs)' dynamically - fallback to hardcoded...");
+                console.error(e);
             }
             cb(null, "");
         });
@@ -497,6 +525,7 @@ function loadReferences(done) {
                 }
             } catch (e) {
                 console.error("ERROR Retrieving 'producttypes (roots)' dynamically - fallback to hardcoded...");
+                console.error(e);
             }
             cb(null, "");
         });
@@ -570,6 +599,9 @@ function doDump() {
         throw "Cannot dump to " + outDir + " - path is not a directory.";
     }
 
+    if (settings.verbose) {
+        console.log("Started win client with ts mark %s", current_ts);
+    }
     win.start(function () {
         loadReferences(function () {
             assembleWork();
