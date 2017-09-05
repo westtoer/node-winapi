@@ -195,24 +195,26 @@ function size(fname) {
     return fs.statSync(fname).size;
 }
 
-function jsonSplit(size, pathname, fname) {
-    console.log("todo - split json files for %s", fname);
+function jsonSplit(size, outDirName, name, fPath) {
+    jspage.doSplit(size, path.join(outDirName, name), name + "-", fPath);
+    //console.log("todo - split json file into chunks of %d at %s for file %s ", size, pathname, fname);
 }
 
-function splitPages(ext, pathname, fname) {
+function splitPages(ext, outDirName, name, fPath) {
     if (ext === "xml") {
         return; // not supported yet
     }
     
     if (ext === "json" && pageLimits.json > 0) {
-        jsonSplit(pageLimits.json, pathname, fname);
+        jsonSplit(pageLimits.json, outDirName, name, fPath);
     }
 }
 
 function perform(task) {
 
     var q = task.query,
-        pathname = path.join(outDir, task.dir, task.name);
+        outDirName = path.join(outDir, task.dir),
+        pathname = path.join(outDirName, task.name);
 
 
     Object.keys(FORMATS).forEach(function (ext) {
@@ -243,7 +245,7 @@ function perform(task) {
                 //this because apparently there is no content-length header
                 res.on('end', function () {
                     reportDone(ext, task, "ok", uri, ts, open, size(fname), res.headers['content-type']);
-                    splitPages(ext, pathname, fname);
+                    splitPages(ext, outDirName, task.name, fname);
                 });
             } else {
                 reportDone(ext, task, status, uri, ts, open, -1, "");
