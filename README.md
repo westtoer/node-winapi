@@ -31,10 +31,10 @@ nodejs dhubdump.js -o ~/feeds/WIN/2.0/ -i <<yourid>> -s <<yoursecret>>
 
 is equivalent to:
 ```
-nodejs dhubdump.js -o ~/feeds/WIN/2.0/ -i <<yourid>> -s <<yoursecret>> vocs samples products
+nodejs dhubdump.js -o ~/feeds/WIN/2.0/ -i <<yourid>> -s <<yoursecret>> vocs products
 ```
 
-meaning that it will combine those 3 dumps in one run.
+meaning that it will combine those 2 dumps in one run.
 
 
 
@@ -101,10 +101,6 @@ This dump produces:
     taxonomies.<<format>>
 ```
 
-
-The content of these files is descibed [here](http://todo-shmdoc-reference)
-
-
 ## Samples dump
 ```
 nodejs dhubdump.js -o ~/feeds/WIN/2.0/ -i <<yourid>> -s <<yoursecret>> samples
@@ -121,14 +117,11 @@ Containing export-files holding single-item information, identified by their id.
 The content of these files follows the previsously mentioned 'products' layout.
 
 
-
 ## Claims dump
 ```
 nodejs dhubdump.js -o ~/feeds/WIN/2.0/ -i <<yourid>> -s <<yoursecret>> claims
 ```
-This will produce the files claims.xml and claims.json
-
-The content of these files is descibed [here](http://todo-shmdoc-reference)
+This will produce the files claims.xml and claims.json containing the infromation about the claims in the WIN
 
 
 
@@ -136,9 +129,35 @@ The content of these files is descibed [here](http://todo-shmdoc-reference)
 ```
 nodejs dhubdump.js -o ~/feeds/WIN/2.0/ -i <<yourid>> -s <<yoursecret>> stats
 ```
-TODO - expected september 2015
+This will produce the files stats.xml and stats.json containing the statistical data in the WIN
 
-The content of these files is descibed [here](http://todo-shmdoc-reference)
+
+
+## Splitting json files
+
+Adding this switch
+
+```
+-j <<max-number-records>>
+```
+
+Will force all json-array files to be split into separate files (parts) each containing maximum the specified number of elements.
+If the original json already contains less, no splitting will be provided.
+
+This fetaure is to better support consumers of the dump that don't use a json streaming (or pull) parser.
+
+With this swithch the following extra process goes on for every produced json file.
+
+(only) If  **/path/some-name.json has more then N records
+Then the dump will produce the folder:
+
+```
+    **/path/some-name/ with following contents:
+    **/path/some-name/some-name-index.json en 
+    **/path/some-name/some-name-part-00000.json 
+       …
+    **/path/some-name/some-name-part-00023.json 
+```
 
 
 
