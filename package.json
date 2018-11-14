@@ -13,15 +13,15 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "async": "^1.2.1",
-    "chai": "^3.0.0",
-    "csv": "^0.4.5",
-    "graceful-fs": "^4.1.2",
-    "mocha": "^2.2.5",
-    "moment": "^2.10.3",
-    "rimraf": "^2.6.1",
-    "stream-json": "^0.5.2",
-    "yargs": "^3.9.1"
+    "async": "^1.5.2",
+    "chai": "^3.5.0",
+    "csv": "^0.4.6",
+    "graceful-fs": "^4.1.15",
+    "mocha": "^2.5.3",
+    "moment": "^2.22.2",
+    "rimraf": "^2.6.2",
+    "stream-json": "^0.5.3",
+    "yargs": "^3.32.0"
   },
   "bugs": {
     "url": "https://github.com/westtoer/node-winapi/issues"

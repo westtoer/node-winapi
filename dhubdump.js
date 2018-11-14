@@ -236,7 +236,7 @@ function perform(task) {
 
         work.open += 1;
         if (first_ts === undefined) { first_ts = ts; }
-        win.stream(qbf, sink, function (err, res) {
+        win.stream(qbf, sink, function (err, res, stream) {
             if (err) {
                 status += "\ncallback Error: " + err;
             }
@@ -245,14 +245,15 @@ function perform(task) {
                 //this because apparently there is no content-length header
                 res.on('end', function () {
                     reportDone(ext, task, "ok", uri, ts, open, size(fname), res.headers['content-type']);
-                    splitPages(ext, outDirName, task.name, fname);
+                    stream.on('finish', function() {
+                        splitPages(ext, outDirName, task.name, fname);
+                    });
                 });
             } else {
                 reportDone(ext, task, status, uri, ts, open, -1, "");
             }
         });
     });
-
 }
 
 function makePeriodTasks(pTask) {
